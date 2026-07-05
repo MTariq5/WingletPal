@@ -25,7 +25,7 @@ The app is a 400×400 frameless, circular "avionics clock" desktop widget. All Q
 
 Three `QObject` classes are registered as QML types in `main.cpp` (`qmlRegisterType`, each under its own module name/version, e.g. `import WeatherProvider 1.0`) and instantiated once at the top of `main.qml`:
 
-- **`TimeDateProvider`** — self-contained 1s `QTimer` exposing `hours`/`minutes`/`seconds`/`timeString`/`amPm`/`date` as properties. Drives every clock face in the UI.
+- **`TimeDateProvider`** — self-contained 1s `QTimer` exposing `hours` (24h), `hours12` (1–12, derived from `hours` each tick), `minutes`/`seconds`/`timeString`/`amPm`/`date` as properties. Drives every clock face in the UI. Any 12-hour display should bind to `hours12` rather than doing `% 12` conversion in QML.
 - **`LocationProvider`** — fetches IP-based geolocation from `ip-api.com` on `Component.onCompleted`, exposing `city`/`latitude`/`longitude`/`error`. Retries every 5s on failure until it succeeds.
 - **`WeatherProvider`** — fetches current conditions + 24h hourly forecast from Open-Meteo (no API key required), exposing `currentTemperature`/`currentWeatherCode`/`currentWeatherDescription`/`currentWeatherIcon`/`currentWindSpeed`/`hourlyForecast` (a `QVariantList` of per-hour maps) plus `loading`/`errorString`. Auto-refreshes every 30 minutes once a location is set. WMO weather codes are mapped to description/icon in `codeToDescription`/`codeToIcon`; day-vs-night icon selection uses sunrise/sunset parsed from the API's `daily` block, but only weather code 0 (clear sky) currently has a distinct night icon — extend `codeToIcon` the same way to add more.
 
@@ -37,9 +37,13 @@ A single `Window` with `Qt.FramelessWindowHint` and a transparent background; th
 
 The body is a 3-page `SwipeView`:
 1. **Analog HSI clock** — stacked SVG layers from `Resources/ehsi/` (dial → bezel → hour needle → minute needle → seconds bug), each needle's `rotation` bound directly to `timeDate.hours/minutes/seconds`.
-2. **Digital clock** — time/date/city text bound to `timeDate`/`location`; the temperature line is currently a hardcoded string, not bound to `WeatherProvider`. A settings-gear button opens the settings drawer.
-3. **Weather page** — background photo + `FastBlur`-based glassmorphism panel, live time/date/city, and a horizontal `ListView` bound to `weather.hourlyForecast`, delegating each entry to `utilities/CustomTempContainer.qml`.
+2. **Digital clock ("cockpit" theme)** — restyled as a premium avionics display: dark radial gradient background (`#2B2B2B` center → `#121212` edge via `RadialGradient`), and the `hh:mm:ss AM/PM` clock row (bound to `timeDate.hours12`, zero-padded in QML) rendered in gold/amber (`#D9A441`) with a subtle `DropShadow` for lift, not glow. Below the clock sits `utilities/FunnyEyes.qml` (see below), then date/temperature/city. Temperature is bound to `weather.currentTemperature`, rounded, `°C` suffix — not hardcoded. The settings-gear button (`settingBtn`) is currently `visible: false` (hidden but still wired to open the settings drawer if re-enabled).
+3. **Weather page** — background photo + `FastBlur`-based glassmorphism panel, live time (also `hours12`, 12-hour) + date + city — the top info block (location row / clock row / date) is centered as a whole via `Layout.alignment: Qt.AlignHCenter` on each row (no hardcoded left margins) — and a horizontal `ListView` bound to `weather.hourlyForecast`, delegating each entry to `utilities/CustomTempContainer.qml`.
 
 A slide-down settings drawer (`settingsCarbet`, animated via a `Behavior on y`) hosts `Brightness-Control/BritnessControl.qml` — this is a self-contained slider (0–254) with no effect on the actual system/display brightness; it's UI-only. `utilities/CloseButton.qml` exists but is unused and references a resource path that isn't in the qml module (`/Resources/flpn/closeIcon.svg`).
 
 Reusable QML components live under `utilities/` and `Brightness-Control/`, imported into `main.qml` via relative directory imports (`import "./utilities"`, `import "./Brightness-Control"`) rather than a versioned module.
+
+### `utilities/FunnyEyes.qml` — desktop companion eyes
+
+A pair of cartoon eyes drawn entirely from QML primitives (no images/emoji/SVG): each eye is `Rectangle` circles (sclera → gradient iris → pupil → highlight) plus a soft-gray eyelid `Rectangle`, all clipped to a circle via `OpacityMask` so the eyelid reads as covering a round eye. A single `blinkAmount` property (0 = open, 1 = closed) drives both eyes' eyelids; a `Timer` re-randomizes its own `interval` (2–3s) after each firing and triggers a short `SequentialAnimation` (close/hold/open, ~200ms total) via the exposed `blinkOnce()` function. `lookX`/`lookY`/`expression` properties exist as no-op hooks for future expressions (look direction, wink, sleepy, etc.) without reworking the blink mechanics. Instantiated once on Page 2, between the clock and the date.
