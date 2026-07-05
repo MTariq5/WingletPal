@@ -254,6 +254,12 @@ Window {
                             }
                         }
 
+                        //DESKTOP COMPANION EYES
+                        FunnyEyes {
+                            id: funnyEyes
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+
                         //DATE
                         Text {
                             id: currentDate

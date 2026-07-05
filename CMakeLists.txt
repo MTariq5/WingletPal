@@ -34,6 +34,7 @@ qt_add_qml_module(appAvionicsClock
     SOURCES WeatherProvider.h WeatherProvider.cpp
     RESOURCES Resources/closeup-shot-plane-wing.jpg Resources/cloudscape-with-plane-flying.jpg
     QML_FILES utilities/CustomTempContainer.qml
+    QML_FILES utilities/FunnyEyes.qml
     RESOURCES Resources/weather/clear_sky.png Resources/weather/mainly_clear.png Resources/weather/Overcast.png Resources/weather/partaly_cloudy.png Resources/weather/rain.png Resources/weather/snow.png
     RESOURCES Resources/weather/location.svg
     RESOURCES Resources/ehsi/hi_loc2-dev-Minuites.svg Resources/ehsi/hi_loc2-needle-Minuites.svg
