@@ -29,6 +29,16 @@ void TimeDateProvider::timeUpdated(){
         emit hoursChanged();
     }
 
+    // HOURS (12-hour format: 0 -> 12, 13-23 -> 1-11)
+    int hours12 = m_hours % 12;
+    if (hours12 == 0) {
+        hours12 = 12;
+    }
+    if (m_hours12 != hours12) {
+        m_hours12 = hours12;
+        emit hours12Changed();
+    }
+
     // MINUTES
     if (m_minuites != now.minute()) {
         m_minuites = now.minute();
@@ -60,6 +70,10 @@ void TimeDateProvider::timeUpdated(){
 
 int TimeDateProvider::getHours() const {
     return m_hours;
+}
+
+int TimeDateProvider::getHours12() const {
+    return m_hours12;
 }
 
 int TimeDateProvider::getMinutes() const {

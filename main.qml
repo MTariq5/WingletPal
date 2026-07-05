@@ -162,24 +162,45 @@ Window {
                 Rectangle {
                     anchors.fill: parent
                     radius: width / 2
-                    color: "black"
+                    color: "#121212"
+
+                    // PREMIUM COCKPIT BACKGROUND — subtle dark radial gradient
+                    RadialGradient {
+                        anchors.fill: parent
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: "#2B2B2B" }
+                            GradientStop { position: 0.6; color: "#1E1E1E" }
+                            GradientStop { position: 1.0; color: "#121212" }
+                        }
+                    }
 
                     ColumnLayout{
                         width: parent.width
                         spacing: 15
                         anchors.centerIn: parent
 
+
                         RowLayout{
+                            id: digitalClockRow
                             spacing: 6
                             Layout.alignment: Qt.AlignHCenter
 
+                            layer.enabled: true
+                            layer.effect: DropShadow {
+                                transparentBorder: true
+                                horizontalOffset: 0
+                                verticalOffset: 2
+                                radius: 8
+                                samples: 17
+                                color: "#66000000"
+                            }
 
                             Text {
                                 id: digitalHoursLabel
-                                text: timeDate.hours
+                                text: timeDate.hours12 < 10 ? "0" + timeDate.hours12 : timeDate.hours12
                                 font.bold: true
-                                font.pixelSize: fontSize
-                                color: "white"
+                                font.pixelSize: fontSize * 1.6
+                                color: "#D9A441"
                                 font.family: fontStyle
                                 verticalAlignment: Qt.AlignVCenter
                             }
@@ -188,17 +209,17 @@ Window {
                                 id: spoeration
                                 text: qsTr(":")
                                 font.bold: true
-                                font.pixelSize: fontSize
-                                color: "white"
+                                font.pixelSize: fontSize * 1.6
+                                color: "#D9A441"
                                 verticalAlignment: Qt.AlignVCenter
                             }
 
                             Text {
                                 id: digitalMinuitesLabel
-                                text: timeDate.minutes
+                                text: timeDate.minutes < 10 ? "0" + timeDate.minutes : timeDate.minutes
                                 font.bold: true
-                                font.pixelSize: fontSize
-                                color: "white"
+                                font.pixelSize: fontSize * 1.6
+                                color: "#D9A441"
                                 font.family: fontStyle
                                 verticalAlignment: Qt.AlignVCenter
                             }
@@ -207,8 +228,8 @@ Window {
                                 id: spoeration2
                                 text: qsTr(":")
                                 font.bold: true
-                                font.pixelSize: fontSize
-                                color: "white"
+                                font.pixelSize: fontSize * 1.6
+                                color: "#D9A441"
                                 verticalAlignment: Qt.AlignVCenter
                             }
 
@@ -216,8 +237,8 @@ Window {
                                 id: digitalSecondsLabel
                                 text: timeDate.seconds < 10 ? "0" + timeDate.seconds : timeDate.seconds
                                 font.bold: true
-                                font.pixelSize: fontSize
-                                color: "white"
+                                font.pixelSize: fontSize * 1.6
+                                color: "#D9A441"
                                 font.family: fontStyle
                                 verticalAlignment: Qt.AlignVCenter
                             }
@@ -226,8 +247,8 @@ Window {
                                 id: pmAmLabel
                                 text: timeDate.amPm
                                 font.bold: true
-                                font.pixelSize: fontSize
-                                color: "white"
+                                font.pixelSize: fontSize * 1.6
+                                color: "#D9A441"
                                 font.family: fontStyle
                                 verticalAlignment: Qt.AlignVCenter
                             }
@@ -247,7 +268,7 @@ Window {
                         //TEMPERATURE
                         Text {
                             id: currentTemp
-                            text: "25 " + "°C"
+                            text: Math.round(weather.currentTemperature) + "°C"
                             font.bold: true
                             font.pixelSize: fontSize
                             color: "white"
@@ -275,6 +296,7 @@ Window {
                             buttonName: " "
                             buttonSource: "qrc:/AvionicsClock/Resources/settings-outline.svg" //"Resources/settings-outline.svg"
                             Layout.alignment: Qt.AlignHCenter
+                            visible: false
 
                             onButtonClicked: {
                                 settingsCarbet.y = 0
@@ -345,7 +367,7 @@ Window {
 
                         RowLayout{
                             height: parent.height * 0.4
-                            Layout.leftMargin: 130
+                            Layout.alignment: Qt.AlignHCenter
 
                             Image {
                                 source: "qrc:/AvionicsClock/Resources/weather/" + "location.svg"
@@ -365,11 +387,10 @@ Window {
                         //DIGITAL TIME
                         RowLayout{
                             spacing: 6
-                            Layout.leftMargin: 60
-
+                            Layout.alignment: Qt.AlignHCenter
 
                             Text {
-                                text: timeDate.hours
+                                text: timeDate.hours12 < 10 ? "0" + timeDate.hours12 : timeDate.hours12
                                 font.bold: true
                                 font.pixelSize: fontSize
                                 color: "white"
@@ -386,7 +407,7 @@ Window {
                             }
 
                             Text {
-                                text: timeDate.minutes
+                                text: timeDate.minutes < 10 ? "0" + timeDate.minutes : timeDate.minutes
                                 font.bold: true
                                 font.pixelSize: fontSize
                                 color: "white"
@@ -428,7 +449,7 @@ Window {
                             font.pixelSize: fontSize
                             color: "white"
                             font.family: fontStyle
-                            Layout.leftMargin: 30
+                            Layout.alignment: Qt.AlignHCenter
                         }
 
                     }
