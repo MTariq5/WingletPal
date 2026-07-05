@@ -8,10 +8,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 6.2 COMPONENTS Quick REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Network)
+find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 
 qt_add_executable(appAvionicsClock
     main.cpp
 )
+
+# Bundles whatever reminder clips have been dropped into Resources/audio/ —
+# see Resources/audio/README.md. Empty on a fresh checkout; harmless if so.
+# RELATIVE is required: qt_add_qml_module's resource system rejects absolute
+# paths (which file(GLOB) returns by default) with a QT_RESOURCE_ALIAS error.
+file(GLOB AUDIO_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "Resources/audio/*.mp3")
 
 qt_add_qml_module(appAvionicsClock
     URI AvionicsClock
@@ -39,6 +46,8 @@ qt_add_qml_module(appAvionicsClock
     RESOURCES Resources/weather/location.svg
     RESOURCES Resources/ehsi/hi_loc2-dev-Minuites.svg Resources/ehsi/hi_loc2-needle-Minuites.svg
     RESOURCES Resources/weather/night-moon.png
+    QML_FILES utilities/ReminderManager.qml
+    RESOURCES ${AUDIO_FILES}
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -53,7 +62,7 @@ set_target_properties(appAvionicsClock PROPERTIES
 )
 
 target_link_libraries(appAvionicsClock
-    PRIVATE Qt6::Quick Qt6::Core Qt6::Network)
+    PRIVATE Qt6::Quick Qt6::Core Qt6::Network Qt6::Multimedia)
 
 
 include(GNUInstallDirs)
