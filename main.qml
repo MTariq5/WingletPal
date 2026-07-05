@@ -75,11 +75,27 @@ Window {
         }
     }
 
+    ReminderManager {
+        id: healthReminder
+    }
+
     // Inside LocationProvider (or as a sibling Connections element)
     Connections {
         target: location
         function onLocationChanged() {
             weather.setLocation(location.latitude, location.longitude)
+        }
+    }
+
+    // Cross-wires the reminder scheduler to the Page 2 companion eyes —
+    // ReminderManager has no knowledge of FunnyEyes itself.
+    Connections {
+        target: healthReminder
+        function onReminderStarted() {
+            funnyEyes.lookAtUser()
+        }
+        function onReminderFinished() {
+            funnyEyes.resumeAutonomy()
         }
     }
 
@@ -369,7 +385,10 @@ Window {
 
                     ColumnLayout{
                         width: parent.width
-                        height: parent.height * 0.3
+                        //height: parent.height * 0.3
+                        spacing: 2
+                        anchors.bottom: listView.top
+                        anchors.bottomMargin: 5
 
                         RowLayout{
                             height: parent.height * 0.4
@@ -383,7 +402,7 @@ Window {
                             Text {
                                 text: location.city == "" ? "NO INTERNET CONN." : location.city
                                 font.bold: true
-                                font.pixelSize: fontSize * 1.2
+                                font.pixelSize: fontSize
                                 color: "white"
                                 font.family: fontStyle
                                 Layout.alignment: Qt.AlignBottom
@@ -461,6 +480,7 @@ Window {
                     }
 
                     ListView{
+                        id:listView
                         width: parent.width * 0.8
                         height: parent.height * 0.4
                         anchors.centerIn: parent
