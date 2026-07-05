@@ -32,6 +32,23 @@ Item {
     // 0 = fully open, 1 = fully closed — drives the eyelid on both eyes
     property real blinkAmount: 0
 
+    // ── Look-around timing (ms) ──────────────────────────────────────────
+    property real lookIntervalMin: 3000
+    property real lookIntervalMax: 6000
+    property int lookMoveDurationMin: 600
+    property int lookMoveDurationMax: 800
+    property int lookPauseDurationMin: 300
+    property int lookPauseDurationMax: 500
+
+    // Tracked so consecutive look-arounds avoid repeating the same direction.
+    property string lastLookDirection: ""
+
+    // Gates the random look-around timer only — blinking is unaffected.
+    // Callers (e.g. a reminder system) can flip this via lookAtUser()/
+    // resumeAutonomy() to hold the eyes on the user without touching the
+    // blink mechanics.
+    property bool autonomousLookEnabled: true
+
     implicitWidth: eyeSize * 2 + eyeSpacing
     implicitHeight: eyeSize
 
@@ -39,11 +56,71 @@ Item {
         blinkAnim.restart()
     }
 
+    // Suspends random look-around and smoothly brings the pupils to dead
+    // center, then blinks once — used to make the eyes "look at the user"
+    // for things like a health reminder. Call resumeAutonomy() when done.
+    function lookAtUser() {
+        root.autonomousLookEnabled = false
+        lookAroundAnim.stop()
+        attentionAnim.restart()
+    }
+
+    // Re-enables random look-around (blinking never stopped).
+    function resumeAutonomy() {
+        root.autonomousLookEnabled = true
+    }
+
+    // Picks a random left/right/up/down direction (never the previous one,
+    // when another choice exists) and animates lookX/lookY out and back.
+    // Independent of blinkAmount, so a blink mid-look just plays over it.
+    function lookAround() {
+        var directions = ["left", "right", "up", "down"]
+        var choices = directions.filter(function (d) { return d !== root.lastLookDirection })
+        var direction = choices[Math.floor(Math.random() * choices.length)]
+        root.lastLookDirection = direction
+
+        lookAroundAnim.targetX = (direction === "left") ? -1 : (direction === "right") ? 1 : 0
+        lookAroundAnim.targetY = (direction === "up") ? -1 : (direction === "down") ? 1 : 0
+        lookAroundAnim.moveDuration = root.lookMoveDurationMin + Math.random() * (root.lookMoveDurationMax - root.lookMoveDurationMin)
+        lookAroundAnim.pauseDuration = root.lookPauseDurationMin + Math.random() * (root.lookPauseDurationMax - root.lookPauseDurationMin)
+        lookAroundAnim.restart()
+    }
+
     SequentialAnimation {
         id: blinkAnim
         NumberAnimation { target: root; property: "blinkAmount"; to: 1; duration: root.closeDuration; easing.type: Easing.InQuad }
         PauseAnimation { duration: root.closedHold }
         NumberAnimation { target: root; property: "blinkAmount"; to: 0; duration: root.openDuration; easing.type: Easing.OutQuad }
+    }
+
+    SequentialAnimation {
+        id: lookAroundAnim
+        property real targetX: 0
+        property real targetY: 0
+        property int moveDuration: 700
+        property int pauseDuration: 400
+
+        ParallelAnimation {
+            NumberAnimation { target: root; property: "lookX"; to: lookAroundAnim.targetX; duration: lookAroundAnim.moveDuration; easing.type: Easing.InOutQuad }
+            NumberAnimation { target: root; property: "lookY"; to: lookAroundAnim.targetY; duration: lookAroundAnim.moveDuration; easing.type: Easing.InOutQuad }
+        }
+        PauseAnimation { duration: lookAroundAnim.pauseDuration }
+        ParallelAnimation {
+            NumberAnimation { target: root; property: "lookX"; to: 0; duration: lookAroundAnim.moveDuration; easing.type: Easing.InOutCubic }
+            NumberAnimation { target: root; property: "lookY"; to: 0; duration: lookAroundAnim.moveDuration; easing.type: Easing.InOutCubic }
+        }
+    }
+
+    // Brings the pupils back to center (in case a random look-around was
+    // mid-flight) and blinks once. Independent of blinkAnim/lookAroundAnim
+    // so it can't visually collide with either.
+    SequentialAnimation {
+        id: attentionAnim
+        ParallelAnimation {
+            NumberAnimation { target: root; property: "lookX"; to: 0; duration: 400; easing.type: Easing.InOutQuad }
+            NumberAnimation { target: root; property: "lookY"; to: 0; duration: 400; easing.type: Easing.InOutQuad }
+        }
+        ScriptAction { script: root.blinkOnce() }
     }
 
     // Only ticks every 2-3s and starts a ~200ms animation — no continuous
@@ -55,6 +132,20 @@ Item {
         onTriggered: {
             root.blinkOnce()
             interval = root.blinkIntervalMin + Math.random() * (root.blinkIntervalMax - root.blinkIntervalMin)
+        }
+    }
+
+    // Only ticks every 3-6s and starts a ~1.5-2s animation — eyes stay idle
+    // (no per-frame work) the rest of the time, same pattern as blinkTimer.
+    // Disabled (not destroyed) while autonomousLookEnabled is false, e.g.
+    // during a reminder's "look at the user" moment.
+    Timer {
+        running: root.autonomousLookEnabled
+        repeat: true
+        interval: root.lookIntervalMin + Math.random() * (root.lookIntervalMax - root.lookIntervalMin)
+        onTriggered: {
+            root.lookAround()
+            interval = root.lookIntervalMin + Math.random() * (root.lookIntervalMax - root.lookIntervalMin)
         }
     }
 
