@@ -122,7 +122,43 @@ Window {
             id: swipeView
             anchors.fill: parent
 
-            //PAGE1 ANALOUGE CLOCK
+            //PAGE 1 PFD CLOCK
+            Item {
+                //PFD CLOCK SHAPE
+                Rectangle {
+                    anchors.fill: parent
+                    radius: width / 2
+                    color: "transparent"
+
+
+                    //CLOCK BASE IMAGE PFD
+                    Image {
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: "qrc:/AvionicsClock/Resources/eaid/clock-pfd.svg"
+                    }
+
+
+                    //CLOCK BASE IMAGE PFD
+                    Image {
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: "qrc:/AvionicsClock/Resources/eaid/hourArrow.svg"
+                    }
+
+
+                    //CLOCK BASE IMAGE PFD
+                    Image {
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: "qrc:/AvionicsClock/Resources/eaid/minuitesArrow.svg"
+                    }
+
+
+                }
+            }
+
+            //PAGE2 ANALOUGE CLOCK
             Item {
                 //HSI CLOCK SHAPE
                 Rectangle {
@@ -173,7 +209,7 @@ Window {
                 }
             }
 
-            //PAGE2 DIGITAL CLOCK
+            //PAGE3 DIGITAL CLOCK
             Item {
                 Rectangle {
                     anchors.fill: parent
@@ -328,7 +364,7 @@ Window {
                 }
             }
 
-            //PAGE3 TEMPERATURE STATUS
+            //PAGE4 TEMPERATURE STATUS
             Item{
                 //anchors.fill: parent
                 Rectangle{

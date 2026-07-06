@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a CMake-based Qt6 GUI application (no `.pro`/qmake file, no CMakePresets.json — it's driven directly through Qt Creator kits or manual CMake invocation).
 
-Requires Qt 6.2+ with the `Quick`, `Core`, and `Network` modules, plus the `Qt5Compat.GraphicalEffects` and `QtQuick.VirtualKeyboard` QML modules (used by `main.qml`). The two build directories checked into this tree were generated from two Qt Creator kits: "Desktop Qt 6.6.0 MSVC2019 64bit" (Release) and "Replacement for Desktop Qt 6.4.3 MinGW 64bit" (Debug) — point `CMAKE_PREFIX_PATH` at whichever Qt install/kit is available:
+Requires Qt 6.2+ with the `Quick`, `Core`, `Network`, and `Multimedia` modules, plus the `Qt5Compat.GraphicalEffects` and `QtQuick.VirtualKeyboard` QML modules (used by `main.qml`). The two build directories checked into this tree were generated from two Qt Creator kits: "Desktop Qt 6.6.0 MSVC2019 64bit" (Release) and "Replacement for Desktop Qt 6.4.3 MinGW 64bit" (Debug) — point `CMAKE_PREFIX_PATH` at whichever Qt install/kit is available. The `Multimedia` component is not installed by default with every Qt kit; if `find_package(Qt6 REQUIRED COMPONENTS Multimedia)` fails during configure, add it to that kit's Qt installation via the Qt Maintenance Tool:
 
 ```
 cmake -S . -B build -DCMAKE_PREFIX_PATH="<path-to-Qt>\6.6.0\msvc2019_64"
@@ -19,7 +19,7 @@ There is no automated test suite and no configured linter in this repo.
 
 ## Architecture
 
-The app is a 400×400 frameless, circular "avionics clock" desktop widget. All QML resources (files under `Resources/`, `utilities/`, `Brightness-Control/`) are compiled into the binary via `qt_add_qml_module(... URI AvionicsClock ...)` in `CMakeLists.txt`, and loaded at runtime through `qrc:/AvionicsClock/...` paths — there is no filesystem asset loading. When adding a new QML file or resource, it must be added to the `qt_add_qml_module` call in `CMakeLists.txt` or it won't be bundled.
+The app is a 400×400 frameless, circular "avionics clock" desktop widget. All QML resources (files under `Resources/`, `utilities/`, `Brightness-Control/`) are compiled into the binary via `qt_add_qml_module(... URI AvionicsClock ...)` in `CMakeLists.txt`, and loaded at runtime through `qrc:/AvionicsClock/...` paths — there is no filesystem asset loading. When adding a new QML file or resource, it must be added to the `qt_add_qml_module` call in `CMakeLists.txt` or it won't be bundled. The one exception is `Resources/audio/*.mp3` (see `ReminderManager` below), which is bundled via `file(GLOB AUDIO_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "Resources/audio/*.mp3")` — the `RELATIVE` keyword is required, since `file(GLOB)` returns absolute paths by default and `qt_add_qml_module`'s resource system rejects those with a `QT_RESOURCE_ALIAS` error.
 
 ### C++ ⇄ QML bridge
 
@@ -29,7 +29,7 @@ Three `QObject` classes are registered as QML types in `main.cpp` (`qmlRegisterT
 - **`LocationProvider`** — fetches IP-based geolocation from `ip-api.com` on `Component.onCompleted`, exposing `city`/`latitude`/`longitude`/`error`. Retries every 5s on failure until it succeeds.
 - **`WeatherProvider`** — fetches current conditions + 24h hourly forecast from Open-Meteo (no API key required), exposing `currentTemperature`/`currentWeatherCode`/`currentWeatherDescription`/`currentWeatherIcon`/`currentWindSpeed`/`hourlyForecast` (a `QVariantList` of per-hour maps) plus `loading`/`errorString`. Auto-refreshes every 30 minutes once a location is set. WMO weather codes are mapped to description/icon in `codeToDescription`/`codeToIcon`; day-vs-night icon selection uses sunrise/sunset parsed from the API's `daily` block, but only weather code 0 (clear sky) currently has a distinct night icon — extend `codeToIcon` the same way to add more.
 
-These three are independent — the one cross-wire is in `main.qml`: a `Connections` block calls `weather.setLocation(location.latitude, location.longitude)` whenever `LocationProvider.locationChanged` fires, which is what actually triggers the first weather fetch.
+These three are independent — the one cross-wire is in `main.qml`: a `Connections` block calls `weather.setLocation(location.latitude, location.longitude)` whenever `LocationProvider.locationChanged` fires, which is what actually triggers the first weather fetch. A second, similarly independent `Connections` block wires `utilities/ReminderManager.qml`'s `reminderStarted`/`reminderFinished` signals to `funnyEyes.lookAtUser()`/`resumeAutonomy()` (see below).
 
 ### QML UI structure (`main.qml`)
 
@@ -46,4 +46,21 @@ Reusable QML components live under `utilities/` and `Brightness-Control/`, impor
 
 ### `utilities/FunnyEyes.qml` — desktop companion eyes
 
-A pair of cartoon eyes drawn entirely from QML primitives (no images/emoji/SVG): each eye is `Rectangle` circles (sclera → gradient iris → pupil → highlight) plus a soft-gray eyelid `Rectangle`, all clipped to a circle via `OpacityMask` so the eyelid reads as covering a round eye. A single `blinkAmount` property (0 = open, 1 = closed) drives both eyes' eyelids; a `Timer` re-randomizes its own `interval` (2–3s) after each firing and triggers a short `SequentialAnimation` (close/hold/open, ~200ms total) via the exposed `blinkOnce()` function. `lookX`/`lookY`/`expression` properties exist as no-op hooks for future expressions (look direction, wink, sleepy, etc.) without reworking the blink mechanics. Instantiated once on Page 2, between the clock and the date.
+A pair of cartoon eyes drawn entirely from QML primitives (no images/emoji/SVG): each eye is `Rectangle` circles (sclera → gradient iris → pupil → highlight) plus a soft-gray eyelid `Rectangle`, all clipped to a circle via `OpacityMask` so the eyelid reads as covering a round eye. A single `blinkAmount` property (0 = open, 1 = closed) drives both eyes' eyelids; a `Timer` re-randomizes its own `interval` (2–3s) after each firing and triggers a short `SequentialAnimation` (close/hold/open, ~200ms total) via the exposed `blinkOnce()` function. `expression` exists as a no-op hook for future expressions (wink, sleepy, happy, etc.) without reworking the blink mechanics. Instantiated once on Page 2, between the clock and the date.
+
+`lookX`/`lookY` (-1..1, offsetting the iris/pupil via `anchors.horizontalCenterOffset`/`verticalCenterOffset`) are no longer just hooks — they're driven by a second, independent `Timer` (3–6s, re-randomized each firing) that calls `lookAround()`: picks one of left/right/up/down (never diagonal, and avoids repeating the previous direction when another choice exists), then animates out and back to center via a `SequentialAnimation` (`InOutQuad` move out → `PauseAnimation` → `InOutCubic` move back), all fully independent of `blinkAnim` so the two never visually collide.
+
+`autonomousLookEnabled` gates only that random look-around timer (blinking is never affected). Two functions build on top of it for external callers (currently `ReminderManager`, below): `lookAtUser()` disables autonomous look-around, cancels any in-flight look, animates the pupils back to dead center, and blinks once; `resumeAutonomy()` re-enables random look-around. This is how the health-reminder feature makes the eyes "look at the user" without any popup/UI.
+
+### `utilities/ReminderManager.qml` — hourly developer-health voice reminders
+
+A self-contained scheduler, instantiated once in `main.qml` as `healthReminder`, independent of every other provider (same "cross-wired only via `Connections`" pattern as `LocationProvider`/`WeatherProvider`). A `Timer` fires every `reminderIntervalMs` (**currently 1 minute for testing — revert to `60 * 60 * 1000` for the real 60-minute cadence**) relative to app startup, not synced to the clock. On each tick, `triggerReminder()`:
+
+- no-ops if `remindersEnabled` is `false` (the property reserved for a future Do-Not-Disturb setting — the timer keeps ticking regardless, it just skips playback/signals), or if a clip is already playing (`player.playbackState === MediaPlayer.PlayingState`), guaranteeing no overlap;
+- otherwise picks a random entry from `reminderSources` (never repeating `lastReminderIndex`), sets it as the `MediaPlayer`'s `source`, emits `reminderStarted()`, and calls `player.play()`.
+
+`onPlaybackStateChanged` emits `reminderFinished()` when the player transitions to `StoppedState` (i.e. playback naturally ends). Playback goes through Qt Multimedia's `MediaPlayer`/`AudioOutput` QML types, so it's async and never blocks the UI thread.
+
+`reminderSources` is a hardcoded list of `qrc:/AvionicsClock/Resources/audio/reminderN.mp3` paths (currently `reminder1`–`reminder5`, though only 1–4 exist as real files — see `Resources/audio/README.md`). Adding a new clip means: drop the `.mp3` into `Resources/audio/` (auto-bundled by CMake's glob, no `CMakeLists.txt` edit needed) and append one line to this array.
+
+`main.qml` wires `reminderStarted`/`reminderFinished` to `funnyEyes.lookAtUser()`/`resumeAutonomy()` — `ReminderManager` itself has zero knowledge of `FunnyEyes` or any UI, so swapping in a different reaction (or adding more, e.g. a future "wave" animation) only touches that one `Connections` block.
