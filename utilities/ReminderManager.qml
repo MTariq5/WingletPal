@@ -18,7 +18,7 @@ Item {
 
     // TESTING: temporarily 1 minute instead of 60 — revert to
     // `60 * 60 * 1000` after confirming the reminder fires/plays correctly.
-    property int reminderIntervalMs: 1 * 60 * 1000
+    property int reminderIntervalMs: 60 * 60 * 1000
 
     // Add more reminder categories/clips by appending entries here (and
     // dropping the matching .mp3 into Resources/audio/, which CMake
