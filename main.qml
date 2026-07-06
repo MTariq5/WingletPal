@@ -15,13 +15,30 @@ import "./Brightness-Control"
 
 Window {
     id: root
-    width: 400
-    height: 400
+
+    // ── Display sizing constants ────────────────────────────────────────
+    // Single source of truth for the target display. Porting to another
+    // panel (e.g. 480x320, 800x480) means changing these two numbers —
+    // every font size and gauge below is derived from them.
+    property int screenWidth: 320
+    property int screenHeight: 240
+    readonly property real uiScale: screenHeight / 240
+    property real gaugeSize: Math.min(screenWidth, screenHeight) //* 0.85
+    property real fontLarge: 26 * uiScale
+    property real fontMedium: 16 * uiScale
+    property real fontSmall: 11 * uiScale
+
+    width: screenWidth
+    height: screenHeight
+    minimumWidth: screenWidth
+    maximumWidth: screenWidth
+    minimumHeight: screenHeight
+    maximumHeight: screenHeight
     visible: true
     title: qsTr("Avioncs Clock V1.0")
 
     flags: Qt.FramelessWindowHint
-    color: "transparent"
+    color: "#121212"
 
     InputPanel {
         id: inputPanel
@@ -87,7 +104,7 @@ Window {
         }
     }
 
-    // Cross-wires the reminder scheduler to the Page 2 companion eyes —
+    // Cross-wires the reminder scheduler to the Page 3 companion eyes —
     // ReminderManager has no knowledge of FunnyEyes itself.
     Connections {
         target: healthReminder
@@ -104,19 +121,7 @@ Window {
     Rectangle {
         id:mainRec
         anchors.fill: parent
-        radius: width / 2
-        color: "transparent"
-
-        layer.enabled: true
-        layer.smooth: true
-
-        layer.effect: OpacityMask {
-            maskSource: Rectangle {
-                width: mainRec.width
-                height: mainRec.height
-                radius: width / 2
-            }
-        }
+        color: "#121212"
 
         SwipeView {
             id: swipeView
@@ -127,34 +132,42 @@ Window {
                 //PFD CLOCK SHAPE
                 Rectangle {
                     anchors.fill: parent
-                    radius: width / 2
-                    color: "transparent"
+                    color: "#121212"
+
+                    //PFD SKY GROUND
+                    PfdBackground {
+                        anchors.fill: parent
+                        horizonLineWidth: 2 * uiScale
+                    }
 
 
-                    //CLOCK BASE IMAGE PFD
+                    //CLOCK IMAGE
                     Image {
                         anchors.fill: parent
+                        anchors.centerIn: parent
                         fillMode: Image.PreserveAspectFit
                         source: "qrc:/AvionicsClock/Resources/eaid/clock-pfd.svg"
                     }
 
-
-                    //CLOCK BASE IMAGE PFD
+                    //Hour hand
                     Image {
                         anchors.fill: parent
+                        anchors.centerIn: parent
                         fillMode: Image.PreserveAspectFit
                         source: "qrc:/AvionicsClock/Resources/eaid/hourArrow.svg"
+                        transformOrigin: Item.Center
+                        rotation: (timeDate.hours % 12) * 30 + timeDate.minutes * 0.5
                     }
 
-
-                    //CLOCK BASE IMAGE PFD
+                    //Minute hand
                     Image {
                         anchors.fill: parent
+                        anchors.centerIn: parent
                         fillMode: Image.PreserveAspectFit
                         source: "qrc:/AvionicsClock/Resources/eaid/minuitesArrow.svg"
+                        transformOrigin: Item.Center
+                        rotation: timeDate.minutes * 6 + timeDate.seconds * 0.1
                     }
-
-
                 }
             }
 
@@ -163,26 +176,31 @@ Window {
                 //HSI CLOCK SHAPE
                 Rectangle {
                     anchors.fill: parent
-                    radius: width / 2
-                    color: "transparent"
+                    color: "#000000"
 
                     //CLOCK BASE IMAGE
                     Image {
-                        anchors.fill: parent
+                        width: gaugeSize
+                        height: gaugeSize
+                        anchors.centerIn: parent
                         fillMode: Image.PreserveAspectFit
                         source: "qrc:/AvionicsClock/Resources/ehsi/ehsi_hdg_scale.svg"
                     }
 
                     //CASE ACFT UI ONLY
                     Image {
-                        anchors.fill: parent
+                        width: gaugeSize
+                        height: gaugeSize
+                        anchors.centerIn: parent
                         fillMode: Image.PreserveAspectFit
                         source: "qrc:/AvionicsClock/Resources/ehsi/hi_case.svg"
                     }
 
                     //Needle Hours
                     Image {
-                        anchors.fill: parent
+                        width: gaugeSize
+                        height: gaugeSize
+                        anchors.centerIn: parent
                         fillMode: Image.PreserveAspectFit
                         source: "qrc:/AvionicsClock/Resources/ehsi/hi_loc2-needle.svg"
                         transformOrigin: Item.Center
@@ -191,7 +209,9 @@ Window {
 
                     //Needle minuites
                     Image {
-                        anchors.fill: parent
+                        width: gaugeSize
+                        height: gaugeSize
+                        anchors.centerIn: parent
                         fillMode: Image.PreserveAspectFit
                         source: "qrc:/AvionicsClock/Resources/ehsi/hi_loc2-needle-Minuites.svg"
                         transformOrigin: Item.Center
@@ -200,7 +220,9 @@ Window {
 
                     //Bug Seconds
                     Image {
-                        anchors.fill: parent
+                        width: gaugeSize
+                        height: gaugeSize
+                        anchors.centerIn: parent
                         fillMode: Image.PreserveAspectFit
                         source: "qrc:/AvionicsClock/Resources/ehsi/ehsi_hdg_bug.svg"
                         transformOrigin: Item.Center
@@ -213,7 +235,6 @@ Window {
             Item {
                 Rectangle {
                     anchors.fill: parent
-                    radius: width / 2
                     color: "#121212"
 
                     // PREMIUM COCKPIT BACKGROUND — subtle dark radial gradient
@@ -228,9 +249,8 @@ Window {
 
                     ColumnLayout{
                         width: parent.width
-                        spacing: 15
+                        spacing: 8
                         anchors.centerIn: parent
-
 
                         RowLayout{
                             id: digitalClockRow
@@ -251,7 +271,7 @@ Window {
                                 id: digitalHoursLabel
                                 text: timeDate.hours12 < 10 ? "0" + timeDate.hours12 : timeDate.hours12
                                 font.bold: true
-                                font.pixelSize: fontSize * 1.6
+                                font.pixelSize: fontLarge
                                 color: "#D9A441"
                                 font.family: fontStyle
                                 verticalAlignment: Qt.AlignVCenter
@@ -261,7 +281,7 @@ Window {
                                 id: spoeration
                                 text: qsTr(":")
                                 font.bold: true
-                                font.pixelSize: fontSize * 1.6
+                                font.pixelSize: fontLarge
                                 color: "#D9A441"
                                 verticalAlignment: Qt.AlignVCenter
                             }
@@ -270,7 +290,7 @@ Window {
                                 id: digitalMinuitesLabel
                                 text: timeDate.minutes < 10 ? "0" + timeDate.minutes : timeDate.minutes
                                 font.bold: true
-                                font.pixelSize: fontSize * 1.6
+                                font.pixelSize: fontLarge
                                 color: "#D9A441"
                                 font.family: fontStyle
                                 verticalAlignment: Qt.AlignVCenter
@@ -280,7 +300,7 @@ Window {
                                 id: spoeration2
                                 text: qsTr(":")
                                 font.bold: true
-                                font.pixelSize: fontSize * 1.6
+                                font.pixelSize: fontLarge
                                 color: "#D9A441"
                                 verticalAlignment: Qt.AlignVCenter
                             }
@@ -289,7 +309,7 @@ Window {
                                 id: digitalSecondsLabel
                                 text: timeDate.seconds < 10 ? "0" + timeDate.seconds : timeDate.seconds
                                 font.bold: true
-                                font.pixelSize: fontSize * 1.6
+                                font.pixelSize: fontLarge
                                 color: "#D9A441"
                                 font.family: fontStyle
                                 verticalAlignment: Qt.AlignVCenter
@@ -299,7 +319,7 @@ Window {
                                 id: pmAmLabel
                                 text: timeDate.amPm
                                 font.bold: true
-                                font.pixelSize: fontSize * 1.6
+                                font.pixelSize: fontLarge
                                 color: "#D9A441"
                                 font.family: fontStyle
                                 verticalAlignment: Qt.AlignVCenter
@@ -317,7 +337,7 @@ Window {
                             id: currentDate
                             text: timeDate.date
                             font.bold: true
-                            font.pixelSize: fontSize
+                            font.pixelSize: fontMedium
                             color: "white"
                             font.family: fontStyle
                             Layout.alignment: Qt.AlignHCenter
@@ -328,7 +348,7 @@ Window {
                             id: currentTemp
                             text: Math.round(weather.currentTemperature) + "°C"
                             font.bold: true
-                            font.pixelSize: fontSize
+                            font.pixelSize: fontMedium
                             color: "white"
                             font.family: fontStyle
                             Layout.alignment: Qt.AlignHCenter
@@ -339,7 +359,7 @@ Window {
                             id: currentCity
                             text: location.city == "" ? "NO INTERNET CONN." : location.city
                             font.bold: true
-                            font.pixelSize: fontSize
+                            font.pixelSize: fontMedium
                             color: "white"
                             font.family: fontStyle
                             Layout.alignment: Qt.AlignHCenter
@@ -369,19 +389,7 @@ Window {
                 //anchors.fill: parent
                 Rectangle{
                     anchors.fill: parent
-                    radius: width / 2
                     color: "black"
-
-                    layer.enabled: true
-                    layer.smooth: true
-
-                    layer.effect: OpacityMask {
-                        maskSource: Rectangle {
-                            width: mainRec.width
-                            height: mainRec.height
-                            radius: width / 2
-                        }
-                    }
 
                     // Background (for demo)
                     Image {
@@ -432,13 +440,16 @@ Window {
 
                             Image {
                                 source: "qrc:/AvionicsClock/Resources/weather/" + "location.svg"
+                                sourceSize.width: fontMedium
+                                sourceSize.height: fontMedium
+                                fillMode: Image.PreserveAspectFit
                                 Layout.alignment: Qt.AlignVCenter
                             }
 
                             Text {
                                 text: location.city == "" ? "NO INTERNET CONN." : location.city
                                 font.bold: true
-                                font.pixelSize: fontSize
+                                font.pixelSize: fontMedium
                                 color: "white"
                                 font.family: fontStyle
                                 Layout.alignment: Qt.AlignBottom
@@ -453,7 +464,7 @@ Window {
                             Text {
                                 text: timeDate.hours12 < 10 ? "0" + timeDate.hours12 : timeDate.hours12
                                 font.bold: true
-                                font.pixelSize: fontSize
+                                font.pixelSize: fontMedium
                                 color: "white"
                                 font.family: fontStyle
                                 verticalAlignment: Qt.AlignVCenter
@@ -462,7 +473,7 @@ Window {
                             Text {
                                 text: qsTr(":")
                                 font.bold: true
-                                font.pixelSize: fontSize
+                                font.pixelSize: fontMedium
                                 color: "white"
                                 verticalAlignment: Qt.AlignVCenter
                             }
@@ -470,7 +481,7 @@ Window {
                             Text {
                                 text: timeDate.minutes < 10 ? "0" + timeDate.minutes : timeDate.minutes
                                 font.bold: true
-                                font.pixelSize: fontSize
+                                font.pixelSize: fontMedium
                                 color: "white"
                                 font.family: fontStyle
                                 verticalAlignment: Qt.AlignVCenter
@@ -479,7 +490,7 @@ Window {
                             Text {
                                 text: qsTr(":")
                                 font.bold: true
-                                font.pixelSize: fontSize
+                                font.pixelSize: fontMedium
                                 color: "white"
                                 verticalAlignment: Qt.AlignVCenter
                             }
@@ -487,7 +498,7 @@ Window {
                             Text {
                                 text: timeDate.seconds < 10 ? "0" + timeDate.seconds : timeDate.seconds
                                 font.bold: true
-                                font.pixelSize: fontSize
+                                font.pixelSize: fontMedium
                                 color: "white"
                                 font.family: fontStyle
                                 verticalAlignment: Qt.AlignVCenter
@@ -496,7 +507,7 @@ Window {
                             Text {
                                 text: timeDate.amPm
                                 font.bold: true
-                                font.pixelSize: fontSize
+                                font.pixelSize: fontMedium
                                 color: "white"
                                 font.family: fontStyle
                                 verticalAlignment: Qt.AlignVCenter
@@ -507,7 +518,7 @@ Window {
                         Text {
                             text: timeDate.date
                             font.bold: true
-                            font.pixelSize: fontSize
+                            font.pixelSize: fontMedium
                             color: "white"
                             font.family: fontStyle
                             Layout.alignment: Qt.AlignHCenter
@@ -526,8 +537,11 @@ Window {
                         model: weather.hourlyForecast
 
                         delegate: CustomTempContainer{
-                            width: 50
+                            width: 46
                             height: ListView.view.height
+                            fontSize: fontSmall
+                            icon_width: 24
+                            icon_Height: 24
                             hour: modelData.hour
                             ampm: modelData.ampm
                             icon: modelData.weatherIcon
@@ -559,11 +573,12 @@ Window {
             }
 
             ColumnLayout{
-                anchors.fill: parent
+                anchors.centerIn: parent
+                spacing: 12
 
                 //Brightness Slider
                 BritnessControl{
-                    Layout.preferredWidth: 320
+                    Layout.preferredWidth: screenWidth - 20
                     Layout.preferredHeight: 40
                     Layout.alignment: Qt.AlignHCenter
                     setVal : 127
