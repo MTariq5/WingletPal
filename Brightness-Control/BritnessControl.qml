@@ -7,8 +7,8 @@ import Qt5Compat.GraphicalEffects
 Rectangle{
     id: brihtnessControlRoot
     // anchors.verticalCenter: parent.verticalCenter
-    width:  530
-    height: 110
+    width:  300
+    height: 40
     x: ( parent.width / 2 ) - ( width / 2 )
     color : "transparent"
     layer.enabled: true
