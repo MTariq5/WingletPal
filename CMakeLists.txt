@@ -49,6 +49,9 @@ qt_add_qml_module(appAvionicsClock
     QML_FILES utilities/ReminderManager.qml
     RESOURCES ${AUDIO_FILES}
     RESOURCES Resources/eaid/clock-pfd.svg Resources/eaid/hourArrow.svg Resources/eaid/minuitesArrow.svg
+    RESOURCES Resources/eaid/background.svg
+    RESOURCES Resources/eaid/Clock-removebg-preview.png
+    QML_FILES utilities/SkyGradient.qml utilities/GroundGradient.qml utilities/HorizonLine.qml utilities/PfdBackground.qml
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
