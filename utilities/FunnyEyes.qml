@@ -9,8 +9,8 @@ Item {
     id: root
 
     // ── Appearance ───────────────────────────────────────────────────────
-    property real eyeSize: 75
-    property real eyeSpacing: 18
+    property real eyeSize: 42
+    property real eyeSpacing: 12
     property color scleraColor: "#FAFAFA"
     property color irisColor: "#6B4423"
     property color pupilColor: "#141414"
