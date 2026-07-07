@@ -168,6 +168,31 @@ Window {
                         transformOrigin: Item.Center
                         rotation: timeDate.minutes * 6 + timeDate.seconds * 0.1
                     }
+
+                    //CITY (upper-left, in the side margin outside the round gauge)
+                    Text {
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.margins: 6 * uiScale
+                        text: location.city == "" ? "NO INTERNET CONN." : location.city
+                        font.bold: true
+                        font.pixelSize: fontMedium
+                        color: "white"
+                        font.family: fontStyle
+                    }
+
+                    //TEMPERATURE (upper-right, in the side margin outside the round gauge)
+                    Text {
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 6 * uiScale
+                        text: Math.round(weather.currentTemperature) + "°C"
+                        font.bold: true
+                        font.pixelSize: fontMedium
+                        color: "white"
+                        horizontalAlignment: Text.AlignRight
+                        font.family: fontStyle
+                    }
                 }
             }
 

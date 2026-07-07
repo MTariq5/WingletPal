@@ -6,8 +6,7 @@ import QtQuick
 // view) can reuse the same sky without duplicating the stops.
 Rectangle {
     gradient: Gradient {
-        GradientStop { position: 0.0;  color: "#003A9B" }
-        GradientStop { position: 0.55; color: "#1E7BE8" }
-        GradientStop { position: 1.0;  color: "#8ED4FF" }
+        GradientStop { position: 0.0; color: "#0A5EB8" }
+        GradientStop { position: 1.0; color: "#67D4FF" }
     }
 }
