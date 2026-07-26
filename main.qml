@@ -127,8 +127,40 @@ Window {
             id: swipeView
             anchors.fill: parent
 
+            /*
+            //TEST PAGE
+            Item{
+                anchors.fill: parent
+
+                Rectangle{
+                    anchors.fill: parent
+                    color: "green"
+
+                    G5Altimeter{
+                        id:alt
+                        width: parent.width * 0.272
+                        height: parent.height
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        bugValue: 0
+                        bugvisible: true
+                    }
+
+                    //AIRSPEED
+                    G5AirspeedIndicator {
+                        id:ias
+                        width: parent.width * 0.2035 //65
+                        height: parent.height
+                        anchors.left: parent.left
+                    }
+                }
+            }
+            */
+
             //PAGE 1 PFD CLOCK
             Item {
+                id: pfdPage
+
                 //PFD CLOCK SHAPE
                 Rectangle {
                     anchors.fill: parent
@@ -136,17 +168,52 @@ Window {
 
                     //PFD SKY GROUND
                     PfdBackground {
+                        id: pfdBackground
                         anchors.fill: parent
                         horizonLineWidth: 2 * uiScale
                     }
 
-
                     //CLOCK IMAGE
                     Image {
+                        id:clockSVG
                         anchors.fill: parent
                         anchors.centerIn: parent
                         fillMode: Image.PreserveAspectFit
                         source: "qrc:/AvionicsClock/Resources/eaid/clock-pfd.svg"
+                        clip: true
+
+                        Rectangle{
+                            id:pitchLadderCont
+                            anchors.centerIn: parent
+                            color: "transparent"
+                            width: clockSVG.width * 0.4
+                            height: width
+                            radius: width/2
+                            clip: true
+
+                            Image {
+                                id:pitchLadder
+                                source: "qrc:/AvionicsClock/Resources/eaid/eadi_adi_ladd.svg"
+                                fillMode: Image.PreserveAspectFit
+                                width: pitchLadderCont.width
+                                height: width * (sourceSize.height / sourceSize.width)
+                                x: pitchLadderCont.width / 2 - width / 2
+                                y: pitchLadderCont.height / 2 - height / 2 - pfdBackground.effectivePitch * pixelsPerDegree
+
+                                property real pixelsPerDegree: pitchLadderCont.height / 3
+
+                                // Roll must pivot around the gauge's fixed center, not the
+                                // image's own center — the image's own center already moved
+                                // vertically by the pitch offset above, so rotating around it
+                                // (the default transformOrigin) would drag the ladder off-center
+                                // whenever pitch and roll are non-zero at the same time.
+                                transform: Rotation {
+                                    origin.x: pitchLadder.width / 2
+                                    origin.y: pitchLadder.height / 2 + pfdBackground.effectivePitch * pitchLadder.pixelsPerDegree
+                                    angle: pfdBackground.effectiveRoll
+                                }
+                            }
+                        }
                     }
 
                     //Hour hand
@@ -179,6 +246,9 @@ Window {
                         font.pixelSize: fontMedium
                         color: "white"
                         font.family: fontStyle
+
+                        width: 50
+                        wrapMode: Text.WrapAnywhere
                     }
 
                     //TEMPERATURE (upper-right, in the side margin outside the round gauge)

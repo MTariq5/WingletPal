@@ -55,6 +55,7 @@ qt_add_qml_module(appAvionicsClock
     QML_FILES utilities/AirSpeedTape.qml utilities/AltimeterTape.qml utilities/G5AirspeedIndicator.qml utilities/G5Altimeter.qml
     QML_FILES G5/Utilities/CImage.qml G5/Utilities/CustomImage.qml
     RESOURCES Resources/Airspeed/airSpeed_bug.svg Resources/Airspeed/airSpeed_fail.svg Resources/Airspeed/airSpeed_Tumbler_Frame.svg Resources/Airspeed/GS_fail.svg Resources/Altimeter/alt_back.svg Resources/Altimeter/alt_bug.svg Resources/Altimeter/alt_fail.svg Resources/Altimeter/alt_frame.svg Resources/Altimeter/alt_ground.svg Resources/Altimeter/alt_scale.svg
+    RESOURCES Resources/eaid/eadi_adi_ladd.svg
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
