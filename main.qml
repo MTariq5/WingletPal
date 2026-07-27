@@ -645,6 +645,14 @@ Window {
                     }
                 }
             }
+
+            //PAGE5 AIR TRAFFIC DISPLAY (ATD) — Phase 1 skeleton (map + crosshair +
+            //zoom only; see utilities/AirTrafficPage.qml for phase notes).
+            AirTrafficPage {
+                id: airTrafficPage
+                currentLatitude: location.latitude
+                currentLongitude: location.longitude
+            }
         }
 
         //SETTINGS CARBET

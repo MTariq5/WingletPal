@@ -83,3 +83,7 @@ CMakeLists.txt.user*
 .rcc/
 .uic/
 /build*/
+
+# OpenSky API credentials (client_id/client_secret) — local only, never
+# committed. Copy opensky.ini.example to opensky.ini and fill it in.
+/opensky.ini

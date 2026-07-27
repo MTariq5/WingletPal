@@ -9,9 +9,21 @@ find_package(Qt6 6.2 COMPONENTS Quick REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Network)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
+# Air Traffic Display page: QtLocation/QtPositioning QML modules (osm map
+# plugin, coordinate types). Not installed by default on every kit — if this
+# find_package fails at configure time, add "Qt Location" to that kit's Qt
+# install via the Qt Maintenance Tool (same situation Multimedia was in).
+find_package(Qt6 REQUIRED COMPONENTS Location Positioning)
 
 qt_add_executable(appAvionicsClock
     main.cpp
+)
+
+# Lets OpenSkyTokenManager find opensky.ini at a fixed location (the repo
+# root) regardless of which build directory/kit produced the running .exe —
+# see opensky.ini.example and OpenSkyTokenManager::loadCredentialsFromConfig.
+target_compile_definitions(appAvionicsClock PRIVATE
+    AVIONICSCLOCK_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
 # Bundles whatever reminder clips have been dropped into Resources/audio/ —
@@ -56,6 +68,27 @@ qt_add_qml_module(appAvionicsClock
     QML_FILES G5/Utilities/CImage.qml G5/Utilities/CustomImage.qml
     RESOURCES Resources/Airspeed/airSpeed_bug.svg Resources/Airspeed/airSpeed_fail.svg Resources/Airspeed/airSpeed_Tumbler_Frame.svg Resources/Airspeed/GS_fail.svg Resources/Altimeter/alt_back.svg Resources/Altimeter/alt_bug.svg Resources/Altimeter/alt_fail.svg Resources/Altimeter/alt_frame.svg Resources/Altimeter/alt_ground.svg Resources/Altimeter/alt_scale.svg
     RESOURCES Resources/eaid/eadi_adi_ladd.svg
+
+    # Air Traffic Display (ATD) page — map/UI (Phases 0-2).
+    QML_FILES utilities/AirTrafficPage.qml utilities/TrafficMap.qml utilities/CenterCrosshair.qml utilities/ZoomButton.qml utilities/MapStyleMenu.qml
+
+    # ATD backend, Phase 3 — OAuth2 token manager + OpenSky /states/all data
+    # source.
+    SOURCES GeoBoundingBox.h GeoBoundingBox.cpp
+    SOURCES Aircraft.h
+    SOURCES FlightDataSource.h
+    SOURCES OpenSkyTokenManager.h OpenSkyTokenManager.cpp
+    SOURCES OpenSkyFlightSource.h OpenSkyFlightSource.cpp
+
+    # ATD backend, Phase 4 — AircraftListModel (upsert-by-icao QAbstractListModel)
+    # + FlightTrackerProvider (the QML-facing orchestrator: 30s polling schedule,
+    # bounding box from lat/lon + searchRadiusKm, status/errorString). Plus the
+    # on-map marker: a heading-rotated glyph, not a dot, rendered via a
+    # MapItemView added to TrafficMap.qml in this same phase.
+    SOURCES AircraftListModel.h AircraftListModel.cpp
+    SOURCES FlightTrackerProvider.h FlightTrackerProvider.cpp
+    QML_FILES utilities/AircraftMarker.qml
+    RESOURCES Resources/traffic/aircraft.svg
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -70,7 +103,7 @@ set_target_properties(appAvionicsClock PROPERTIES
 )
 
 target_link_libraries(appAvionicsClock
-    PRIVATE Qt6::Quick Qt6::Core Qt6::Network Qt6::Multimedia)
+    PRIVATE Qt6::Quick Qt6::Core Qt6::Network Qt6::Multimedia Qt6::Location Qt6::Positioning)
 
 
 include(GNUInstallDirs)
