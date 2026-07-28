@@ -71,6 +71,19 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: "#121212"
+        // Without this, a child positioned outside this Rectangle's own
+        // 0..width bounds (like AircraftDetailPanel's closed-state
+        // x: -panelWidth - 8, meant to park it off-canvas) isn't actually
+        // hidden — SwipeView lays every page out side by side in one long
+        // horizontal strip, so that "off-canvas" coordinate is still valid
+        // space that happens to fall inside the *previous* page's own
+        // window. clip: true confines every child below to this page's
+        // real bounds, so anything parked outside them (the closed detail
+        // panel today; MapStyleMenu's fan-out is currently short enough to
+        // never reach the left edge, but would hit the same bug if it grew)
+        // is genuinely invisible instead of bleeding into a neighboring
+        // SwipeView page.
+        clip: true
 
         TrafficMap {
             id: trafficMap
