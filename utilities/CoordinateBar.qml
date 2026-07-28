@@ -17,8 +17,9 @@ Item {
     property double longitude: 0
     property bool hasFix: false
 
-    width: parent ? parent.width : 0
+    width: parent ? parent.width * 0.6 : 0
     height: 22
+    anchors.horizontalCenter: parent.horizontalCenter
 
     // Converts one decimal-degree value into a "D°MM'SS\"H" string, where H
     // is positiveSuffix/negativeSuffix depending on sign (N/S for latitude,
@@ -52,13 +53,14 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: "#80121212"
+        radius: 4
     }
 
     Text {
         anchors.centerIn: parent
         color: "white"
         font.bold: true
-        font.pixelSize: 11
+        font.pixelSize: 14
         text: root.hasFix
               ? root.formatDms(root.latitude, "N", "S") + "   " + root.formatDms(root.longitude, "E", "W")
               : "Acquiring position…"

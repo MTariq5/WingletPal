@@ -84,8 +84,8 @@ Item {
         // since it's text-only (see CoordinateBar's own comment).
         CoordinateBar {
             anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
+            // anchors.left: parent.left
+            // anchors.right: parent.right
             latitude: root.currentLatitude
             longitude: root.currentLongitude
             hasFix: root.hasLocationFix

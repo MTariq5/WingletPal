@@ -87,8 +87,9 @@ Item {
             anchors.right: time.left
             anchors.rightMargin: 6
             anchors.verticalCenter: parent.verticalCenter
-            color: "#CCCCCC"
-            font.pixelSize: 10
+            color: "white" //"#CCCCCC"
+            font.pixelSize: 12
+            font.bold: true
             elide: Text.ElideRight
             text: root.dateText
         }
@@ -97,8 +98,9 @@ Item {
             id: time
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            color: "#CCCCCC"
-            font.pixelSize: 10
+            color: "white"  //"#CCCCCC"
+            font.pixelSize: 12
+            font.bold: true
             text: root.timeText
         }
     }
