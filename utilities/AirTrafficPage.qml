@@ -42,6 +42,13 @@ Item {
     property real currentTemperature: 0
     property var timeProvider: null
 
+    // Snapshot of the currently-tapped aircraft (see TrafficMap.qml's
+    // aircraftSelected/aircraftDeselected), or null when none is selected.
+    // Drives AircraftDetailPanel below; TrafficMap.selectedIcao is the
+    // matching "which marker is highlighted" state, kept in sync with this
+    // via the signal handlers and the panel's close button further down.
+    property var selectedAircraft: null
+
     // Held here (not as a self-referencing binding on trafficMap.center)
     // so the pre-fix state is an explicit, stable value rather than an
     // invalid (0,0) QGeoCoordinate on first evaluation.
@@ -72,6 +79,8 @@ Item {
                     ? QtPositioning.coordinate(root.currentLatitude, root.currentLongitude)
                     : root.placeholderCenter
             aircraftModel: flightTracker.model
+            onAircraftSelected: (aircraft) => root.selectedAircraft = aircraft
+            onAircraftDeselected: root.selectedAircraft = null
         }
 
         // Fixed user-position marker — always dead center, never moves.
@@ -162,6 +171,28 @@ Item {
             onStyleSelected: (styleId) => {
                 trafficMap.mapStyle = styleId
                 visible = false
+            }
+        }
+
+        // Aircraft detail card — last child so it paints above everything
+        // else on the page while sliding open. Closing via the ✕ clears
+        // both halves of the selection state directly (trafficMap's
+        // selectedIcao, so the highlighted marker reverts to black, and
+        // this page's own selectedAircraft, so the card's slide-out
+        // animation has "closed" to animate toward) — this is the only path
+        // that doesn't go through TrafficMap.handleMarkerClicked, since
+        // there's no guarantee the aircraft that opened this card still has
+        // a marker to tap a second time.
+        AircraftDetailPanel {
+            // No anchors set here beyond what the component defines
+            // internally (vertical centering, x driven by open/Behavior) —
+            // anchoring top+bottom from the outside would fight its own
+            // explicit height (sized to content) and its slide animation.
+            open: root.selectedAircraft !== null
+            aircraft: root.selectedAircraft
+            onCloseRequested: {
+                trafficMap.selectedIcao = ""
+                root.selectedAircraft = null
             }
         }
     }

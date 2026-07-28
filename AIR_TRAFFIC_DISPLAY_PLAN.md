@@ -257,6 +257,22 @@ knowledge of where the data comes from" convention as `AircraftMarker.qml`:
 - **Still not built:** the traffic-count readout (`Traffic: N`) this phase
   originally planned.
 
+**Aircraft selection / detail panel — not in the original plan, added by
+explicit request alongside Phase 6.** Tapping a marker (`AircraftMarker`'s
+enlarged `MouseArea` + `clicked()` signal) highlights it orange via a
+`ColorOverlay` (the glyph has no explicit SVG fill, so it's solid black by
+default) and opens `AircraftDetailPanel.qml`, a compact card that slides in
+from the left edge (`Behavior on x`). Tapping the same aircraft again reverts
+the color and closes the card; the card also has its own close button, since
+the selected aircraft's marker can vanish from the map (out of query range)
+while the card is still open. `TrafficMap.qml` owns the selection state
+(`selectedIcao`/`aircraftSelected`/`aircraftDeselected`); `AirTrafficPage.qml`
+just holds the snapshot and forwards it to the panel. The panel shows a
+snapshot captured at tap time, not a live binding into `AircraftListModel` —
+it can go stale if left open across a 30s refresh; making it live-refresh
+would need an invokable `AircraftListModel::aircraftData(icao)` lookup plus a
+`dataChanged` listener in QML, deliberately not built yet.
+
 **Phase 7 — Resilience.** Cache the last good list; on request failure keep the
 map and last aircraft on screen and set `status = Unavailable` → overlay shows
 "Traffic Unavailable". Never clear the map, never crash.

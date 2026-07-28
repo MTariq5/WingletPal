@@ -42,6 +42,44 @@ Item {
     // darkOverlay comment and MapStyleMenu.qml for why.
     property string mapStyle: "standard"
 
+    // icao24 of the currently-tapped aircraft, or "" if none. The single
+    // source of truth for which marker is highlighted orange (each
+    // delegate below compares its own model.icao against this); the
+    // caller (AirTrafficPage) only ever reads it indirectly via the two
+    // signals below, or clears it directly (e.g. from a detail panel's
+    // close button) — it's a plain property, not read-only, specifically
+    // so that reset path works without needing a dedicated function call.
+    property string selectedIcao: ""
+
+    // Emitted with a snapshot object — {icao, callsign, latitude,
+    // longitude, heading, altitude, groundSpeed, verticalSpeed, lastUpdate,
+    // onGround} — whenever a marker is tapped and becomes the new
+    // selection. A snapshot, not a live binding into aircraftModel: the
+    // caller's detail panel shows this data as of the moment of the tap,
+    // not continuously refreshed as AircraftListModel::upsert updates the
+    // row underneath it.
+    signal aircraftSelected(var aircraft)
+
+    // Emitted when the currently-selected marker is tapped again (toggling
+    // selection off). Carries no data — the caller just needs to know to
+    // close whatever it opened in response to aircraftSelected.
+    signal aircraftDeselected()
+
+    // Single entry point every delegate's AircraftMarker.onClicked calls.
+    // Toggles: tapping the already-selected aircraft clears the selection
+    // instead of re-selecting it, which is what lets "tap it again" double
+    // as the close gesture the plan calls for, without the caller having to
+    // track "is this the same one I already had open" itself.
+    function handleMarkerClicked(aircraft) {
+        if (root.selectedIcao === aircraft.icao) {
+            root.selectedIcao = ""
+            root.aircraftDeselected()
+        } else {
+            root.selectedIcao = aircraft.icao
+            root.aircraftSelected(aircraft)
+        }
+    }
+
     // root.zoomLevel is the single source of truth; map.zoomLevel is a pure
     // one-way binding to it (see below). Previously these mutated
     // map.zoomLevel directly, which — because map.zoomLevel already had an
@@ -187,6 +225,19 @@ Item {
                 sourceItem: AircraftMarker {
                     heading: model.heading
                     onGround: model.onGround
+                    selected: model.icao === root.selectedIcao
+                    onClicked: root.handleMarkerClicked({
+                        icao: model.icao,
+                        callsign: model.callsign,
+                        latitude: model.latitude,
+                        longitude: model.longitude,
+                        heading: model.heading,
+                        altitude: model.altitude,
+                        groundSpeed: model.groundSpeed,
+                        verticalSpeed: model.verticalSpeed,
+                        lastUpdate: model.lastUpdate,
+                        onGround: model.onGround
+                    })
                 }
             }
         }

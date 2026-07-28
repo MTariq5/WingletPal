@@ -77,6 +77,13 @@ qt_add_qml_module(appAvionicsClock
     # rest of that phase by explicit request.
     QML_FILES utilities/CoordinateBar.qml utilities/StatusBar.qml
 
+    # ATD marker selection — tap an aircraft to highlight it orange and open
+    # a left floating detail card; tap again (or its close button) to
+    # deselect. AircraftMarker.qml's ColorOverlay needs Qt5Compat.
+    # GraphicalEffects, already a required module (see main.qml's DropShadow/
+    # FastBlur/RadialGradient usage).
+    QML_FILES utilities/AircraftDetailPanel.qml
+
     # ATD backend, Phase 3 — OAuth2 token manager + OpenSky /states/all data
     # source.
     SOURCES GeoBoundingBox.h GeoBoundingBox.cpp
