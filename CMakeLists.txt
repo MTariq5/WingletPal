@@ -72,6 +72,11 @@ qt_add_qml_module(appAvionicsClock
     # Air Traffic Display (ATD) page — map/UI (Phases 0-2).
     QML_FILES utilities/AirTrafficPage.qml utilities/TrafficMap.qml utilities/CenterCrosshair.qml utilities/ZoomButton.qml utilities/MapStyleMenu.qml
 
+    # ATD overlay bars — DMS position readout (top) + city/temperature/date/
+    # time (bottom-left floating panel), part of Phase 6, added ahead of the
+    # rest of that phase by explicit request.
+    QML_FILES utilities/CoordinateBar.qml utilities/StatusBar.qml
+
     # ATD backend, Phase 3 — OAuth2 token manager + OpenSky /states/all data
     # source.
     SOURCES GeoBoundingBox.h GeoBoundingBox.cpp

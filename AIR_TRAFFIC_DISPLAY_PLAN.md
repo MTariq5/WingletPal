@@ -222,9 +222,40 @@ is what to build next session, so it doesn't need to be re-derived:
   upsert` removes a row the instant its icao is missing from a batch, which
   would look abrupt combined with the animation above).
 
-**Phase 6 — Overlay.** City (top-left, from `LocationProvider`), traffic count
-(top-right, `Traffic: N`), zoom buttons (bottom-right). Given 320×240, the zoom
-readout is folded into a button label rather than a separate corner element.
+**Phase 6 — Overlay. Partially done, built differently than originally
+sketched here — done by explicit request ahead of Phase 5.** This section
+originally planned city top-left + traffic count top-right; what actually
+got built is two small purely-presentational components (`CoordinateBar.qml`,
+`StatusBar.qml`), both following the same "primitive properties in, no
+knowledge of where the data comes from" convention as `AircraftMarker.qml`:
+
+- **`CoordinateBar.qml`** — full-width bar at the very top (safe to sit under
+  main.qml's transparent 40px window-drag `Rectangle`, since it's text-only
+  and needs no mouse events). Shows the live fix as DMS
+  (`D°MM'SS"N   D°MM'SS"E`), not raw decimal degrees — `formatDms()` handles
+  the rounding-carry edge cases (59.6" -> 60" -> next minute -> possibly next
+  degree) explicitly. Shows "Acquiring position…" until `hasFix` is true.
+- **`StatusBar.qml`** — small rounded translucent panel, bottom-left, two
+  rows (city + temperature / date + time) rather than one, because
+  `TimeDateProvider.date`'s `"dddd, MMMM d, yyyy"` format is too long to
+  fit alongside city/time/temperature on a single line at 320px wide. Anchored
+  `right: controlColumn.left` (not `parent.right`) so it never runs under the
+  zoom/style buttons — same approach `MapStyleMenu` already uses. Deliberately
+  a flat translucent `Rectangle`, not a `FastBlur` glass panel like the
+  Weather page's: blurring would mean sampling the live, panning/zooming `Map`
+  every frame instead of a static background image, a per-frame cost this app
+  can't spend on a Pi Zero 2 W.
+- `AirTrafficPage.qml` forwards `currentCity`/`currentTemperature`/
+  `timeProvider` down from `main.qml`'s existing `location`/`weather`/
+  `timeDate` instances — same "reuse the existing provider, no new fetch
+  logic" pattern already used for `currentLatitude`/`currentLongitude`.
+  `timeProvider` is the one exception to "primitives only": the whole
+  `TimeDateProvider` is passed down as `property var`, and `AirTrafficPage`
+  itself picks off `.date`/`.hours12`/`.minutes`/`.seconds`/`.amPm` into
+  primitives when it hands them to `StatusBar` — ticking every second made
+  five separate forwarded properties feel like needless ceremony one level up.
+- **Still not built:** the traffic-count readout (`Traffic: N`) this phase
+  originally planned.
 
 **Phase 7 — Resilience.** Cache the last good list; on request failure keep the
 map and last aircraft on screen and set `status = Unavailable` → overlay shows

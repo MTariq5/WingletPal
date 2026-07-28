@@ -646,12 +646,18 @@ Window {
                 }
             }
 
-            //PAGE5 AIR TRAFFIC DISPLAY (ATD) — Phase 1 skeleton (map + crosshair +
-            //zoom only; see utilities/AirTrafficPage.qml for phase notes).
+            //PAGE5 AIR TRAFFIC DISPLAY (ATD) — map + crosshair + zoom + DMS/
+            //status overlay bars; see utilities/AirTrafficPage.qml for phase
+            //notes. currentCity/currentTemperature/timeProvider reuse the
+            //same location/weather/timeDate instances every other page
+            //already binds to directly — no new provider, no new fetch.
             AirTrafficPage {
                 id: airTrafficPage
                 currentLatitude: location.latitude
                 currentLongitude: location.longitude
+                currentCity: location.city
+                currentTemperature: weather.currentTemperature
+                timeProvider: timeDate
             }
         }
 
