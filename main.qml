@@ -1,12 +1,16 @@
 import QtQuick
-import QtQuick.VirtualKeyboard
 import QtQuick.Controls
+import QtQuick.Controls.Basic as Basic
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 
 import TimeDateProvider 1.0
 import LocationProvider 1.0
 import WeatherProvider 1.0
+import ConnectivityChecker 1.0
+import WifiManager 1.0
+import CameraController 1.0
+import FocusSession 1.0
 
 import "./utilities"
 import "./Brightness-Control"
@@ -40,35 +44,8 @@ Window {
     flags: Qt.FramelessWindowHint
     color: "#121212"
 
-    InputPanel {
-        id: inputPanel
-        z: 99
-        x: 0
-        y: root.height
-        width: root.width
-
-        states: State {
-            name: "visible"
-            when: inputPanel.active
-            PropertyChanges {
-                target: inputPanel
-                y: root.height - inputPanel.height
-            }
-        }
-        transitions: Transition {
-            from: ""
-            to: "visible"
-            reversible: true
-            ParallelAnimation {
-                NumberAnimation {
-                    properties: "y"
-                    duration: 250
-                    easing.type: Easing.InOutQuad
-                }
-            }
-        }
-    }
-
+    property real companionVolume: 1.0
+    property bool companionMuted: false
 
     property real fontSize: 20
     property string fontStyle: "Eurostile" //"Roboto Mono"
@@ -80,20 +57,110 @@ Window {
 
     LocationProvider{
         id:location
-        Component.onCompleted: {
-            fetchLocation();
-        }
     }
 
     WeatherProvider {
         id: weather
-        Component.onCompleted: {
+        Component.onCompleted: setLocation(location.latitude, location.longitude)
+    }
 
-        }
+    CameraController {
+        id: appCamera
     }
 
     ReminderManager {
         id: healthReminder
+        remindersEnabled: !faceGreeting.active && !focusSession.active && !focusCompletion.active
+        volume: root.companionVolume
+        muted: root.companionMuted
+    }
+
+    FaceGreeting {
+        id: faceGreeting
+        cameraRunning: appCamera.running
+        facePresent: appCamera.facePresent
+        enabledForPage: digitalPage.SwipeView.isCurrentItem && root.appState === "ready"
+                        && !focusSession.active && !focusCompletion.active
+        audioBusy: healthReminder.active
+        volume: root.companionVolume
+        muted: root.companionMuted
+    }
+
+    FocusSession {
+        id: focusSession
+        onCompleted: focusCompletion.celebrate()
+    }
+
+    FocusCompletion {
+        id: focusCompletion
+        volume: root.companionVolume
+        muted: root.companionMuted
+    }
+
+    RobotBehavior {
+        id: robotBehavior
+        cameraRunning: appCamera.running
+        trackingValid: appCamera.trackingValid
+        predicting: appCamera.predicting
+        greetingActive: faceGreeting.active
+        reminderActive: healthReminder.active
+        focusActive: focusSession.active
+        completionActive: focusCompletion.active
+    }
+
+    ConnectivityChecker {
+        id: connectivityChecker
+        Component.onCompleted: {
+            checkNow()
+        }
+    }
+
+    WifiManager {
+        id: wifiManager
+    }
+
+    // ── Startup gating state machine ────────────────────────────────────
+    // "splash" -> "wifiSetup" | "ready". SplashScreen/WifiSetupPage below
+    // never unmount mainRec (the whole existing SwipeView UI) — they're
+    // painted on top of it, as Window-level siblings declared after it, so
+    // they cover *everything* mainRec contains (every page, the settings
+    // drawer, the drag handle) without needing to reach inside it. mainRec
+    // and every provider above keep running underneath the whole time —
+    // WeatherProvider starts fetching using the saved location on its own
+    // Component.onCompleted regardless of appState. Gating their startup
+    // too would add real complexity for a window that's normally only
+    // gated for ~2s plus one HTTP round trip.
+    property bool splashMinTimeElapsed: false
+    property string appState: "splash" // "splash" | "wifiSetup" | "ready"
+
+    function evaluateAppState() {
+        if (!root.splashMinTimeElapsed || connectivityChecker.checking) {
+            root.appState = "splash"
+        } else if (connectivityChecker.online) {
+            root.appState = "ready"
+        } else {
+            root.appState = "wifiSetup"
+        }
+    }
+
+    // Guarantees the splash is visible for at least this long even if the
+    // very first connectivity check resolves almost instantly — matches
+    // the "~2 seconds" requirement this whole feature was built for.
+    Timer {
+        id: splashMinTimer
+        interval: 2000
+        running: true
+        onTriggered: {
+            root.splashMinTimeElapsed = true
+            root.evaluateAppState()
+        }
+    }
+
+    Connections {
+        target: connectivityChecker
+        function onCheckFinished() {
+            root.evaluateAppState()
+        }
     }
 
     // Inside LocationProvider (or as a sibling Connections element)
@@ -101,18 +168,6 @@ Window {
         target: location
         function onLocationChanged() {
             weather.setLocation(location.latitude, location.longitude)
-        }
-    }
-
-    // Cross-wires the reminder scheduler to the Page 3 companion eyes —
-    // ReminderManager has no knowledge of FunnyEyes itself.
-    Connections {
-        target: healthReminder
-        function onReminderStarted() {
-            funnyEyes.lookAtUser()
-        }
-        function onReminderFinished() {
-            funnyEyes.resumeAutonomy()
         }
     }
 
@@ -126,208 +181,34 @@ Window {
         SwipeView {
             id: swipeView
             anchors.fill: parent
+            currentIndex: 0
 
-            /*
-            //TEST PAGE
-            Item{
-                anchors.fill: parent
-
-                Rectangle{
-                    anchors.fill: parent
-                    color: "green"
-
-                    G5Altimeter{
-                        id:alt
-                        width: parent.width * 0.272
-                        height: parent.height
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        bugValue: 0
-                        bugvisible: true
-                    }
-
-                    //AIRSPEED
-                    G5AirspeedIndicator {
-                        id:ias
-                        width: parent.width * 0.2035 //65
-                        height: parent.height
-                        anchors.left: parent.left
-                    }
-                }
-            }
-            */
-
-            //PAGE 1 PFD CLOCK
+            //DESK COMPANION — first swipe page
             Item {
-                id: pfdPage
-
-                //PFD CLOCK SHAPE
-                Rectangle {
-                    anchors.fill: parent
-                    color: "#121212"
-
-                    //PFD SKY GROUND
-                    PfdBackground {
-                        id: pfdBackground
-                        anchors.fill: parent
-                        horizonLineWidth: 2 * uiScale
+                id: digitalPage
+                Basic.Button {
+                    id: settingsToggle
+                    anchors.top: parent.top
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.topMargin: 8
+                    width: 56
+                    height: 26
+                    z: 1
+                    text: "⌄"
+                    font.pixelSize: 30
+                    font.bold: true
+                    background: Item {}
+                    contentItem: Text {
+                        text: settingsToggle.text
+                        font: settingsToggle.font
+                        color: "#D9A441"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
                     }
-
-                    //CLOCK IMAGE
-                    Image {
-                        id:clockSVG
-                        anchors.fill: parent
-                        anchors.centerIn: parent
-                        fillMode: Image.PreserveAspectFit
-                        source: "qrc:/AvionicsClock/Resources/eaid/clock-pfd.svg"
-                        clip: true
-
-                        Rectangle{
-                            id:pitchLadderCont
-                            anchors.centerIn: parent
-                            color: "transparent"
-                            width: clockSVG.width * 0.4
-                            height: width
-                            radius: width/2
-                            clip: true
-
-                            Image {
-                                id:pitchLadder
-                                source: "qrc:/AvionicsClock/Resources/eaid/eadi_adi_ladd.svg"
-                                fillMode: Image.PreserveAspectFit
-                                width: pitchLadderCont.width
-                                height: width * (sourceSize.height / sourceSize.width)
-                                x: pitchLadderCont.width / 2 - width / 2
-                                y: pitchLadderCont.height / 2 - height / 2 - pfdBackground.effectivePitch * pixelsPerDegree
-
-                                property real pixelsPerDegree: pitchLadderCont.height / 3
-
-                                // Roll must pivot around the gauge's fixed center, not the
-                                // image's own center — the image's own center already moved
-                                // vertically by the pitch offset above, so rotating around it
-                                // (the default transformOrigin) would drag the ladder off-center
-                                // whenever pitch and roll are non-zero at the same time.
-                                transform: Rotation {
-                                    origin.x: pitchLadder.width / 2
-                                    origin.y: pitchLadder.height / 2 + pfdBackground.effectivePitch * pitchLadder.pixelsPerDegree
-                                    angle: pfdBackground.effectiveRoll
-                                }
-                            }
-                        }
-                    }
-
-                    //Hour hand
-                    Image {
-                        anchors.fill: parent
-                        anchors.centerIn: parent
-                        fillMode: Image.PreserveAspectFit
-                        source: "qrc:/AvionicsClock/Resources/eaid/hourArrow.svg"
-                        transformOrigin: Item.Center
-                        rotation: (timeDate.hours % 12) * 30 + timeDate.minutes * 0.5
-                    }
-
-                    //Minute hand
-                    Image {
-                        anchors.fill: parent
-                        anchors.centerIn: parent
-                        fillMode: Image.PreserveAspectFit
-                        source: "qrc:/AvionicsClock/Resources/eaid/minuitesArrow.svg"
-                        transformOrigin: Item.Center
-                        rotation: timeDate.minutes * 6 + timeDate.seconds * 0.1
-                    }
-
-                    //CITY (upper-left, in the side margin outside the round gauge)
-                    Text {
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.margins: 6 * uiScale
-                        text: location.city == "" ? "NO INTERNET CONN." : location.city
-                        font.bold: true
-                        font.pixelSize: fontMedium
-                        color: "white"
-                        font.family: fontStyle
-
-                        width: 50
-                        wrapMode: Text.WrapAnywhere
-                    }
-
-                    //TEMPERATURE (upper-right, in the side margin outside the round gauge)
-                    Text {
-                        anchors.top: parent.top
-                        anchors.right: parent.right
-                        anchors.margins: 6 * uiScale
-                        text: Math.round(weather.currentTemperature) + "°C"
-                        font.bold: true
-                        font.pixelSize: fontMedium
-                        color: "white"
-                        horizontalAlignment: Text.AlignRight
-                        font.family: fontStyle
-                    }
+                    Accessible.name: qsTr("Open companion settings")
+                    onClicked: companionSettings.open()
                 }
-            }
 
-            //PAGE2 ANALOUGE CLOCK
-            Item {
-                //HSI CLOCK SHAPE
-                Rectangle {
-                    anchors.fill: parent
-                    color: "#000000"
-
-                    //CLOCK BASE IMAGE
-                    Image {
-                        width: gaugeSize
-                        height: gaugeSize
-                        anchors.centerIn: parent
-                        fillMode: Image.PreserveAspectFit
-                        source: "qrc:/AvionicsClock/Resources/ehsi/ehsi_hdg_scale.svg"
-                    }
-
-                    //CASE ACFT UI ONLY
-                    Image {
-                        width: gaugeSize
-                        height: gaugeSize
-                        anchors.centerIn: parent
-                        fillMode: Image.PreserveAspectFit
-                        source: "qrc:/AvionicsClock/Resources/ehsi/hi_case.svg"
-                    }
-
-                    //Needle Hours
-                    Image {
-                        width: gaugeSize
-                        height: gaugeSize
-                        anchors.centerIn: parent
-                        fillMode: Image.PreserveAspectFit
-                        source: "qrc:/AvionicsClock/Resources/ehsi/hi_loc2-needle.svg"
-                        transformOrigin: Item.Center
-                        rotation: (timeDate.hours % 12) * 30 + timeDate.minutes * 0.5
-                    }
-
-                    //Needle minuites
-                    Image {
-                        width: gaugeSize
-                        height: gaugeSize
-                        anchors.centerIn: parent
-                        fillMode: Image.PreserveAspectFit
-                        source: "qrc:/AvionicsClock/Resources/ehsi/hi_loc2-needle-Minuites.svg"
-                        transformOrigin: Item.Center
-                        rotation: timeDate.minutes * 6 + timeDate.seconds * 0.1
-                    }
-
-                    //Bug Seconds
-                    Image {
-                        width: gaugeSize
-                        height: gaugeSize
-                        anchors.centerIn: parent
-                        fillMode: Image.PreserveAspectFit
-                        source: "qrc:/AvionicsClock/Resources/ehsi/ehsi_hdg_bug.svg"
-                        transformOrigin: Item.Center
-                        rotation: timeDate.seconds * 6
-                    }
-                }
-            }
-
-            //PAGE3 DIGITAL CLOCK
-            Item {
                 Rectangle {
                     anchors.fill: parent
                     color: "#121212"
@@ -424,13 +305,24 @@ Window {
                         //DESKTOP COMPANION EYES
                         FunnyEyes {
                             id: funnyEyes
+                            greetingActive: robotBehavior.waving
+                            followingFace: robotBehavior.followingFace
+                            attentionActive: robotBehavior.attentionActive
+                            autonomousLookEnabled: robotBehavior.autonomousLookEnabled
+                            facePosition: appCamera.facePosition
                             Layout.alignment: Qt.AlignHCenter
                         }
 
                         //DATE
                         Text {
                             id: currentDate
-                            text: timeDate.date
+                            text: focusCompletion.active ? qsTr("وقت استراحة صغيرة!")
+                                  : focusSession.active ? qsTr("Focus  %1:%2")
+                                      .arg(Math.floor(focusSession.remainingSeconds / 60).toString().padStart(2, "0"))
+                                      .arg((focusSession.remainingSeconds % 60).toString().padStart(2, "0"))
+                                  : robotBehavior.waving
+                                  ? (faceGreeting.audioError ? qsTr("تعذّر تشغيل الصوت") : qsTr("أهلًا!"))
+                                  : timeDate.date
                             font.bold: true
                             font.pixelSize: fontMedium
                             color: "white"
@@ -461,20 +353,207 @@ Window {
                         }
 
 
-                        //CARBIT BUTTON ADDED
-                        CustomButtonIcon{
-                            id:settingBtn
-                            Layout.preferredWidth: 40
-                            Layout.preferredHeight: 35
-                            buttonName: " "
-                            buttonSource: "qrc:/AvionicsClock/Resources/settings-outline.svg" //"Resources/settings-outline.svg"
-                            Layout.alignment: Qt.AlignHCenter
-                            visible: false
 
-                            onButtonClicked: {
-                                settingsCarbet.y = 0
+                    }
+                }
+            }
+
+            //PAGE 1 PFD CLOCK
+            Item {
+                id: pfdPage
+
+                //PFD CLOCK SHAPE
+                Rectangle {
+                    anchors.fill: parent
+                    color: "#121212"
+
+                    //PFD SKY GROUND
+                    PfdBackground {
+                        id: pfdBackground
+                        anchors.fill: parent
+                        horizonLineWidth: 2 * uiScale
+                    }
+
+                    //CLOCK IMAGE
+                    Image {
+                        id:clockSVG
+                        anchors.fill: parent
+                        anchors.centerIn: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: "qrc:/AvionicsClock/Resources/eaid/clock-pfd.svg"
+                        clip: true
+
+                        Rectangle{
+                            id:pitchLadderCont
+                            anchors.centerIn: parent
+                            color: "transparent"
+                            width: gaugeSize * 0.44
+                            height: width
+                            radius: width/2
+                            clip: true
+
+                            Image {
+                                id:pitchLadder
+                                source: "qrc:/AvionicsClock/Resources/eaid/eadi_adi_ladd.svg"
+                                fillMode: Image.PreserveAspectFit
+                                width: pitchLadderCont.width
+                                opacity: 0.6
+                                height: width * (sourceSize.height / sourceSize.width)
+                                x: pitchLadderCont.width / 2 - width / 2
+                                y: pitchLadderCont.height / 2 - height / 2 - pfdBackground.effectivePitch * pixelsPerDegree
+
+                                readonly property real pixelsPerDegree: pfdBackground.pixelsPerDegree
+
+                                // Roll must pivot around the gauge's fixed center, not the
+                                // image's own center — the image's own center already moved
+                                // vertically by the pitch offset above, so rotating around it
+                                // (the default transformOrigin) would drag the ladder off-center
+                                // whenever pitch and roll are non-zero at the same time.
+                                transform: Rotation {
+                                    origin.x: pitchLadder.width / 2
+                                    origin.y: pitchLadder.height / 2 + pfdBackground.effectivePitch * pitchLadder.pixelsPerDegree
+                                    angle: pfdBackground.effectiveRoll
+                                }
                             }
                         }
+                    }
+
+                    //Hour hand
+                    Image {
+                        anchors.fill: parent
+                        anchors.centerIn: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: "qrc:/AvionicsClock/Resources/eaid/hourArrow.svg"
+                        // Supersample the SVG before filtering its rotated edges.
+                        sourceSize: Qt.size(gaugeSize * Screen.devicePixelRatio * 3,
+                                            gaugeSize * Screen.devicePixelRatio * 3)
+                        smooth: true
+                        mipmap: true
+                        transformOrigin: Item.Center
+                        rotation: (timeDate.hours % 12) * 30 + timeDate.minutes * 0.5
+                    }
+
+                    //Minute hand
+                    Image {
+                        anchors.fill: parent
+                        anchors.centerIn: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: "qrc:/AvionicsClock/Resources/eaid/minuitesArrow.svg"
+                        // Supersample the SVG before filtering its rotated edges.
+                        sourceSize: Qt.size(gaugeSize * Screen.devicePixelRatio * 3,
+                                            gaugeSize * Screen.devicePixelRatio * 3)
+                        smooth: true
+                        mipmap: true
+                        transformOrigin: Item.Center
+                        rotation: timeDate.minutes * 6 + timeDate.seconds * 0.1
+                    }
+
+                    Rectangle {
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.margins: 6 * uiScale
+                        width: Math.min(cityLabel.implicitWidth + 14 * uiScale, root.screenWidth * 0.35)
+                        height: 24 * uiScale
+                        radius: 5 * uiScale
+                        color: "#B3121820"
+                        border.color: "#30FFFFFF"
+
+                        Text {
+                            id: cityLabel
+                            anchors.fill: parent
+                            anchors.leftMargin: 7 * uiScale
+                            anchors.rightMargin: 7 * uiScale
+                            verticalAlignment: Text.AlignVCenter
+                            text: location.city !== "" ? location.city
+                                  : location.error !== "" ? "No location" : "Locating…"
+                            elide: Text.ElideRight
+                            font.bold: true
+                            font.pixelSize: fontSmall
+                            color: "#F4F6F8"
+                            font.family: fontStyle
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 6 * uiScale
+                        width: temperatureLabel.implicitWidth + 14 * uiScale
+                        height: 24 * uiScale
+                        radius: 5 * uiScale
+                        color: "#B3121820"
+                        border.color: "#30FFFFFF"
+
+                        Text {
+                            id: temperatureLabel
+                            anchors.centerIn: parent
+                            text: weather.hourlyForecast.length > 0
+                                  ? Math.round(weather.currentTemperature) + "°C" : "—°C"
+                            font.bold: true
+                            font.pixelSize: fontSmall
+                            color: "#F4F6F8"
+                            font.family: fontStyle
+                        }
+                    }
+                }
+            }
+
+            //PAGE2 ANALOUGE CLOCK
+            Item {
+                //HSI CLOCK SHAPE
+                Rectangle {
+                    anchors.fill: parent
+                    color: "#000000"
+
+                    //CLOCK BASE IMAGE
+                    Image {
+                        width: gaugeSize
+                        height: gaugeSize
+                        anchors.centerIn: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: "qrc:/AvionicsClock/Resources/ehsi/ehsi_hdg_scale.svg"
+                    }
+
+                    //CASE ACFT UI ONLY
+                    Image {
+                        width: gaugeSize
+                        height: gaugeSize
+                        anchors.centerIn: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: "qrc:/AvionicsClock/Resources/ehsi/hi_case.svg"
+                    }
+
+                    //Needle Hours
+                    Image {
+                        width: gaugeSize
+                        height: gaugeSize
+                        anchors.centerIn: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: "qrc:/AvionicsClock/Resources/ehsi/hi_loc2-needle.svg"
+                        transformOrigin: Item.Center
+                        rotation: (timeDate.hours % 12) * 30 + timeDate.minutes * 0.5
+                    }
+
+                    //Needle minuites
+                    Image {
+                        width: gaugeSize
+                        height: gaugeSize
+                        anchors.centerIn: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: "qrc:/AvionicsClock/Resources/ehsi/hi_loc2-needle-Minuites.svg"
+                        transformOrigin: Item.Center
+                        rotation: timeDate.minutes * 6 + timeDate.seconds * 0.1
+                    }
+
+                    //Bug Seconds
+                    Image {
+                        width: gaugeSize
+                        height: gaugeSize
+                        anchors.centerIn: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: "qrc:/AvionicsClock/Resources/ehsi/ehsi_hdg_bug.svg"
+                        transformOrigin: Item.Center
+                        rotation: timeDate.seconds * 6
                     }
                 }
             }
@@ -659,52 +738,56 @@ Window {
                 currentTemperature: weather.currentTemperature
                 timeProvider: timeDate
             }
+
+            CameraPage {
+                id: cameraPage
+                behaviorState: robotBehavior.stateName
+                camera: appCamera
+                onBackRequested: swipeView.setCurrentIndex(digitalPage.SwipeView.index)
+                visible: SwipeView.isCurrentItem
+            }
+
+            AboutPage {
+                id: aboutPage
+            }
         }
 
-        //SETTINGS CARBET
-        Rectangle{
-            id:settingsCarbet
+        LocationSettings {
+            id: locationSettings
             width: parent.width
             height: parent.height
-            color: "black"
-            opacity: 0.9
+            locationProvider: location
+        }
 
-            y: -height
-
-            Behavior on y {
-                NumberAnimation{
-                    duration: 400
+        CompanionSettings {
+            id: companionSettings
+            width: parent.width
+            height: parent.height
+            volume: root.companionVolume
+            muted: root.companionMuted
+            focusActive: focusSession.active
+            onFocusRequested: {
+                if (focusSession.active) {
+                    focusSession.cancel()
+                } else {
+                    faceGreeting.stopGreeting()
+                    healthReminder.stopReminder()
+                    focusCompletion.stop()
+                    focusSession.start()
                 }
+                swipeView.setCurrentIndex(digitalPage.SwipeView.index)
+                close()
             }
-
-            MouseArea{
-                anchors.fill: parent
+            onLocationRequested: {
+                close()
+                locationSettings.open()
             }
-
-            ColumnLayout{
-                anchors.centerIn: parent
-                spacing: 12
-
-                //Brightness Slider
-                BritnessControl{
-                    Layout.preferredWidth: screenWidth - 20
-                    Layout.preferredHeight: 40
-                    Layout.alignment: Qt.AlignHCenter
-                    setVal : 127
-                }
-
-                //CRABIT BUTTON REMOVER
-                CustomButtonIcon{
-                    Layout.preferredWidth: 40
-                    Layout.preferredHeight: 35
-                    Layout.alignment: Qt.AlignHCenter
-                    buttonName: " "
-                    buttonSource: "qrc:/AvionicsClock/Resources/up-arrow.svg" //"Resources/up-arrow.svg"
-
-                    onButtonClicked: {
-                        settingsCarbet.y = -settingsCarbet.height
-                    }
-                }
+            onVolumeEdited: function(level) { root.companionVolume = level }
+            onMutedEdited: function(silent) { root.companionMuted = silent }
+            onCameraRequested: function(showDiagnostics) {
+                cameraPage.diagnosticsVisible = showDiagnostics
+                swipeView.setCurrentIndex(cameraPage.SwipeView.index)
+                close()
             }
         }
 
@@ -712,7 +795,7 @@ Window {
         Rectangle {
             id: dragArea
             width: parent.width
-            height: 40
+            height: cameraPage.SwipeView.isCurrentItem || digitalPage.SwipeView.isCurrentItem ? 8 : 40
             color: "transparent"
 
             MouseArea {
@@ -731,5 +814,25 @@ Window {
         }
     }
 
+    // Startup gate overlays — declared after mainRec so they paint on top
+    // of it (every page, the settings drawer, and the drag handle all
+    // live inside mainRec). Each is a full-window MouseArea-backed opaque
+    // screen while visible, so nothing underneath is reachable until
+    // appState reaches "ready".
+    SplashScreen {
+        anchors.fill: parent
+        visible: root.appState === "splash"
+        checking: connectivityChecker.checking
 
+        MouseArea {
+            anchors.fill: parent
+        }
+    }
+
+    WifiSetupPage {
+        anchors.fill: parent
+        visible: root.appState === "wifiSetup"
+        wifiManager: wifiManager
+        connectivityChecker: connectivityChecker
+    }
 }
