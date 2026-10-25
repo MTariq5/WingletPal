@@ -1,55 +1,32 @@
-#ifndef LOCATIONPROVIDER_H
-#define LOCATIONPROVIDER_H
-
+#pragma once
 #include <QObject>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QUrl>
-#include <QNetworkRequest>
-#include <QTimer>
-#include <QDebug>
+#include <QSettings>
 
 class LocationProvider : public QObject
 {
     Q_OBJECT
-
-public:
-    explicit LocationProvider(QObject *parent = nullptr);
-
     Q_PROPERTY(QString city READ getCity NOTIFY cityChanged)
-
     Q_PROPERTY(double latitude READ getLatitude NOTIFY locationChanged)
     Q_PROPERTY(double longitude READ getLongitude NOTIFY locationChanged)
-
     Q_PROPERTY(QString error READ getError NOTIFY errorChanged)
-
-    QString getCity();
-    double getLatitude();
-    double getLongitude();
-    QString getError();
-
-    Q_INVOKABLE void fetchLocation();
-
-
+public:
+    explicit LocationProvider(QObject *parent = nullptr);
+    QString getCity() const { return m_city; }
+    double getLatitude() const { return m_latitude; }
+    double getLongitude() const { return m_longitude; }
+    QString getError() const { return m_error; }
+    Q_INVOKABLE bool saveManualLocation(const QString &city, double latitude, double longitude);
+    Q_INVOKABLE bool useTenthOfRamadan();
 signals:
     void cityChanged();
     void locationChanged();
     void errorChanged();
-
-private slots:
-    void onReplyFinished(QNetworkReply *reply);
-
 private:
-    QNetworkAccessManager m_manager; //sending recieving requestes
+    static bool validLocation(const QString &city, double latitude, double longitude);
+    void setError(const QString &message);
+    QSettings m_settings;
     QString m_city;
-    double m_latitude = 0.0;
-    double m_longitude = 0.0;
+    double m_latitude = 0;
+    double m_longitude = 0;
     QString m_error;
-    QTimer m_retryTimer;
-    bool m_loading = false;
-
 };
-
-#endif // LOCATIONPROVIDER_H
