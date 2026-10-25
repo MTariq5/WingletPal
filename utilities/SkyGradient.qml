@@ -1,12 +1,12 @@
 import QtQuick
 
-// Vertical aviation-sky gradient: deep aviation blue at the top, softening
-// through a mid blue into a pale atmospheric haze near the horizon. Split
-// out as its own component so other pages (e.g. a future synthetic-vision
-// view) can reuse the same sky without duplicating the stops.
 Rectangle {
+    // Limit the haze to the visible horizon despite the oversized attitude canvas.
+    property real horizonFadeHeight: height * 0.35
+
     gradient: Gradient {
-        GradientStop { position: 0.0; color: "#0A5EB8" }
-        GradientStop { position: 1.0; color: "#67D4FF" }
+        GradientStop { position: 0.0; color: "#2428F5" }
+        GradientStop { position: Math.max(0, 1 - horizonFadeHeight / Math.max(1, height)); color: "#2428F5" }
+        GradientStop { position: 1.0; color: "#6685E5" }
     }
 }
