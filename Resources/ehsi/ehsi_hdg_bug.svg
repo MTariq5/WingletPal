@@ -1,11 +1,1 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1"
-	 id="svg2" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
-	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 255.2 255.2"
-	 style="enable-background:new 0 0 255.2 255.2;" xml:space="preserve">
-<style type="text/css">
-	.st0{fill:#00FFFF;}
-</style>
-<polygon class="st0" points="116.6,16 123.4,16 127.6,23.8 131.7,16 138.6,16 138.6,24.4 116.6,24.4 "/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 255.2 255.2"><!--SPDX-License-Identifier: MIT. Original project artwork; see licenses/AvionicsClock-Artwork-MIT.txt.--><path d="M114.84 16.588H122.496L127.6 24.244L132.704 16.588H140.36V26.796H114.84Z" fill="#d9a441" /></svg>
