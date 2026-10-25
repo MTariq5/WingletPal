@@ -1,9 +1,8 @@
 import QtQuick
 import QtQuick.Shapes
 
-// Crisp horizon reference with a barely-visible Earth-curvature bow (ends
-// curve up, center dips slightly) drawn as a single quadratic Shape path —
-// cheap to rasterize and stays smooth/anti-aliased at any width.
+// Render the narrow horizon strip offscreen so its curved edges remain
+// filtered when the attitude group rotates or moves by fractional pixels.
 Shape {
     id: root
 
@@ -13,6 +12,11 @@ Shape {
 
     implicitHeight: curvatureDepth * 2 + lineWidth + 4
     antialiasing: true
+    layer.enabled: true
+    layer.smooth: true
+    layer.samples: 4
+    layer.textureSize: Qt.size(Math.ceil(width * Screen.devicePixelRatio * 2),
+                               Math.ceil(height * Screen.devicePixelRatio * 2))
 
     ShapePath {
         strokeColor: root.lineColor
