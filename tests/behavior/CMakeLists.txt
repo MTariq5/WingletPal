@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.16)
+project(RobotBehaviorTests LANGUAGES CXX)
+find_package(Qt6 REQUIRED COMPONENTS QuickTest Quick)
+enable_testing()
+add_executable(robot_behavior_tests runner.cpp)
+target_link_libraries(robot_behavior_tests PRIVATE Qt6::QuickTest Qt6::Quick)
+qt_add_resources(robot_behavior_tests "eye_assets" PREFIX "/AvionicsClock" BASE "../.."
+    FILES "../../Resources/waving-hand.svg")
+add_test(NAME robot_behavior_tests COMMAND robot_behavior_tests -input "${CMAKE_CURRENT_SOURCE_DIR}/tst_robotbehavior.qml")
+set_tests_properties(robot_behavior_tests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software")
