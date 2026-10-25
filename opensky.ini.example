@@ -1,0 +1,5 @@
+# Copy to opensky.ini in the source root and enter your own OpenSky credentials.
+# opensky.ini is ignored by Git. Never commit credentials or access tokens.
+[opensky]
+client_id=
+client_secret=
