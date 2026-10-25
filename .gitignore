@@ -87,3 +87,16 @@ CMakeLists.txt.user*
 # OpenSky API credentials (client_id/client_secret) — local only, never
 # committed. Copy opensky.ini.example to opensky.ini and fill it in.
 /opensky.ini
+
+# Local tools, publication audit output, and user settings
+/.qtcreator/
+/.claude/settings.local.json
+/.codex-remote-attachments/
+/.local-publication/
+.env
+.env.*
+!.env.example
+
+# Generated map cache and packaged builds
+/AvionicsClock/osm-tile-cache/
+/dist/
