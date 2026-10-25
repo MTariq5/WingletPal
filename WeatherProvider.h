@@ -87,6 +87,7 @@ private:
     double m_latitude    = 0.0;
     double m_longitude   = 0.0;
     bool   m_hasLocation = false;
+    int m_locationRevision = 0;
 
     // Current weather
     double m_currentTemperature = 0.0;
