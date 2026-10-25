@@ -23,10 +23,10 @@ Item {
 
     signal closeRequested()
 
-    readonly property int panelWidth: 150
+    readonly property int panelWidth: 130
 
     width: panelWidth
-    height: content.implicitHeight + 16
+    height: content.implicitHeight + 10
     anchors.verticalCenter: parent.verticalCenter
 
     // Closed state parks the card just off the left edge of the page
@@ -65,7 +65,7 @@ Item {
         x: 8
         y: 8
         width: parent.width - 16
-        spacing: 4
+        spacing: 2
 
         Row {
             width: parent.width
@@ -85,7 +85,7 @@ Item {
                 width: 20
                 horizontalAlignment: Text.AlignRight
                 color: "white"
-                font.pixelSize: 13
+                font.pixelSize: 12
                 text: "✕"
 
                 MouseArea {
