@@ -1,11 +1,11 @@
 import QtQuick
 
-// Synthetic-terrain gradient: dark brown near the horizon lightening
-// slightly toward the bottom for subtle depth — no texture/noise, matching
-// the flat-shaded ground used on Garmin/Dynon PFDs.
 Rectangle {
+    property real horizonFadeHeight: height * 0.35
+
     gradient: Gradient {
-        GradientStop { position: 0.0; color: "#F2A61F" }
-        GradientStop { position: 1.0; color: "#C47A00" }
+        GradientStop { position: 0.0; color: "#947022" }
+        GradientStop { position: Math.min(1, horizonFadeHeight / Math.max(1, height)); color: "#4B3815" }
+        GradientStop { position: 1.0; color: "#4B3815" }
     }
 }
