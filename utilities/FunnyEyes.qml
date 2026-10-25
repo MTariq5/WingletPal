@@ -1,10 +1,7 @@
 import QtQuick
 import Qt5Compat.GraphicalEffects
 
-// Reusable "desktop companion" eyes, drawn entirely from QML primitives
-// (no images/emoji/SVG). Exposes lookX/lookY/expression as no-op hooks so
-// future iterations (look direction, wink, sleepy, happy, ...) can drive
-// the same shapes without reworking the blink mechanics below.
+// QML companion eyes with a bundled waving-hand SVG for face greetings.
 Item {
     id: root
 
@@ -24,10 +21,28 @@ Item {
     property real blinkIntervalMin: 2000
     property real blinkIntervalMax: 3000
 
-    // ── Reserved for future expressions (unused for now) ────────────────
+    // Autonomous look direction; face following takes precedence below.
     property real lookX: 0   // -1 (left) .. 1 (right), offsets iris/pupil
     property real lookY: 0   // -1 (up) .. 1 (down)
-    property string expression: "neutral"
+    property bool greetingActive: false
+    property bool attentionActive: false
+    property bool followingFace: false
+    property point facePosition: Qt.point(0, 0)
+
+    // Mirror camera X into screen space: the pupils look toward the viewer.
+    property real gazeX: followingFace ? Math.max(-1, Math.min(1, -facePosition.x)) : lookX
+    property real gazeY: followingFace ? Math.max(-1, Math.min(1, facePosition.y)) : lookY
+    Behavior on gazeX { NumberAnimation { duration: 180; easing.type: Easing.OutQuad } }
+    Behavior on gazeY { NumberAnimation { duration: 180; easing.type: Easing.OutQuad } }
+
+    onFollowingFaceChanged: {
+        resetLook()
+    }
+    onAttentionActiveChanged: {
+        resetLook()
+        if (attentionActive)
+            attentionAnim.restart()
+    }
 
     // 0 = fully open, 1 = fully closed — drives the eyelid on both eyes
     property real blinkAmount: 0
@@ -43,31 +58,39 @@ Item {
     // Tracked so consecutive look-arounds avoid repeating the same direction.
     property string lastLookDirection: ""
 
-    // Gates the random look-around timer only — blinking is unaffected.
-    // Callers (e.g. a reminder system) can flip this via lookAtUser()/
-    // resumeAutonomy() to hold the eyes on the user without touching the
-    // blink mechanics.
+    // RobotBehavior owns the decision to allow autonomous movement.
     property bool autonomousLookEnabled: true
 
     implicitWidth: eyeSize * 2 + eyeSpacing
     implicitHeight: eyeSize
 
+    Image {
+        id: wavingHand
+        anchors.left: parent.right
+        anchors.leftMargin: 10
+        anchors.verticalCenter: parent.verticalCenter
+        width: root.eyeSize * 0.8
+        height: width * 72 / 64
+        source: "qrc:/AvionicsClock/Resources/waving-hand.svg"
+        visible: root.greetingActive
+        transformOrigin: Item.Bottom
+        SequentialAnimation on rotation {
+            running: root.greetingActive
+            loops: Animation.Infinite
+            NumberAnimation { from: -18; to: 18; duration: 220; easing.type: Easing.InOutSine }
+            NumberAnimation { from: 18; to: -18; duration: 220; easing.type: Easing.InOutSine }
+        }
+    }
+
     function blinkOnce() {
         blinkAnim.restart()
     }
 
-    // Suspends random look-around and smoothly brings the pupils to dead
-    // center, then blinks once — used to make the eyes "look at the user"
-    // for things like a health reminder. Call resumeAutonomy() when done.
-    function lookAtUser() {
-        root.autonomousLookEnabled = false
+    function resetLook() {
         lookAroundAnim.stop()
-        attentionAnim.restart()
-    }
-
-    // Re-enables random look-around (blinking never stopped).
-    function resumeAutonomy() {
-        root.autonomousLookEnabled = true
+        attentionAnim.stop()
+        lookX = 0
+        lookY = 0
     }
 
     // Picks a random left/right/up/down direction (never the previous one,
@@ -140,7 +163,7 @@ Item {
     // Disabled (not destroyed) while autonomousLookEnabled is false, e.g.
     // during a reminder's "look at the user" moment.
     Timer {
-        running: root.autonomousLookEnabled
+        running: root.autonomousLookEnabled && !root.followingFace
         repeat: true
         interval: root.lookIntervalMin + Math.random() * (root.lookIntervalMax - root.lookIntervalMin)
         onTriggered: {
@@ -186,8 +209,8 @@ Item {
                     height: width
                     radius: width / 2
                     anchors.centerIn: parent
-                    anchors.horizontalCenterOffset: root.lookX * (parent.width - width) / 2
-                    anchors.verticalCenterOffset: root.lookY * (parent.height - height) / 2
+                    anchors.horizontalCenterOffset: root.gazeX * (parent.width - width) / 2
+                    anchors.verticalCenterOffset: root.gazeY * (parent.height - height) / 2
 
                     gradient: Gradient {
                         GradientStop { position: 0.0; color: Qt.lighter(root.irisColor, 1.25) }
@@ -221,6 +244,16 @@ Item {
                     height: root.blinkAmount * parent.height
                     anchors.top: parent.top
                     color: root.eyelidColor
+                }
+
+                // A raised lower lid gives the greeting a smiling expression.
+                Rectangle {
+                    anchors.bottom: parent.bottom
+                    width: parent.width
+                    height: root.greetingActive ? parent.height * 0.23 : 0
+                    radius: width / 2
+                    color: root.eyelidColor
+                    Behavior on height { NumberAnimation { duration: 180 } }
                 }
             }
         }
