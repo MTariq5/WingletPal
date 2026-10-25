@@ -19,6 +19,7 @@ WeatherProvider::WeatherProvider(QObject *parent) : QObject(parent)
 // ─────────────────────────────────────────────────────────────────────────────
 void WeatherProvider::setLocation(double latitude, double longitude)
 {
+    ++m_locationRevision;
     m_latitude    = latitude;
     m_longitude   = longitude;
     m_hasLocation = true;
@@ -49,6 +50,7 @@ void WeatherProvider::updateWeather()
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     setLoading(true);
+    request.setAttribute(QNetworkRequest::User, m_locationRevision);
     m_manager.get(request);
 
     qDebug() << "WeatherProvider: GET" << url.toString();
@@ -60,6 +62,8 @@ void WeatherProvider::updateWeather()
 void WeatherProvider::onReplyFinished(QNetworkReply *reply)
 {
     reply->deleteLater();
+    if (reply->request().attribute(QNetworkRequest::User).toInt() != m_locationRevision)
+        return;
     setLoading(false);
 
     if (reply->error() != QNetworkReply::NoError) {
