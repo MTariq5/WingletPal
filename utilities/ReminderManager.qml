@@ -6,18 +6,17 @@ import QtMultimedia
 // bundled audio clip (avoiding an immediate repeat), and plays it through
 // Qt Multimedia without blocking the UI. Knows nothing about FunnyEyes or
 // any other UI — it just emits reminderStarted/reminderFinished so callers
-// can react (e.g. main.qml wiring this to funnyEyes.lookAtUser()/
-// resumeAutonomy()), the same cross-wiring pattern used for weather/location.
+// can react. Its active property also reserves audio while a clip loads.
 Item {
     id: root
 
-    // Reserved for a future Do-Not-Disturb setting: the timer keeps
-    // ticking either way, but no audio plays and no signals fire while
-    // this is false.
-    property bool remindersEnabled: true
+    property real volume: 1.0
+    property bool muted: false
 
-    // TESTING: temporarily 1 minute instead of 60 — revert to
-    // `60 * 60 * 1000` after confirming the reminder fires/plays correctly.
+    // main.qml disables reminders while the face greeting is active.
+    property bool remindersEnabled: true
+    property bool active: false
+
     property int reminderIntervalMs: 60 * 60 * 1000
 
     // Add more reminder categories/clips by appending entries here (and
@@ -49,25 +48,38 @@ Item {
         return index
     }
 
+    function stopReminder() {
+        player.stop()
+        root.active = false
+    }
+
     function triggerReminder() {
         if (!root.remindersEnabled)
             return
-        if (player.playbackState === MediaPlayer.PlayingState)
+        if (root.active)
             return // never overlap two reminders
 
         lastReminderIndex = pickReminderIndex()
         player.source = reminderSources[lastReminderIndex]
+        root.active = true
         root.reminderStarted()
         player.play()
     }
 
     MediaPlayer {
         id: player
-        audioOutput: AudioOutput {}
+        audioOutput: AudioOutput { volume: root.volume; muted: root.muted }
 
         onPlaybackStateChanged: {
-            if (playbackState === MediaPlayer.StoppedState)
+            if (playbackState === MediaPlayer.StoppedState) {
+                root.active = false
                 root.reminderFinished()
+            }
+        }
+        onErrorOccurred: function(error, errorString) {
+            console.warn("Reminder audio:", errorString)
+            root.active = false
+            root.reminderFinished()
         }
     }
 
