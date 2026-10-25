@@ -1,115 +1,58 @@
 #include "LocationProvider.h"
+#include <cmath>
 
-
-LocationProvider::LocationProvider(QObject *parent) : QObject(parent) {
-    connect(&m_manager, &QNetworkAccessManager::finished,
-            this, &LocationProvider::onReplyFinished);
-
-    m_retryTimer.setInterval(5000); // 5 seconds
-    m_retryTimer.setSingleShot(false);
-
-    connect(&m_retryTimer, &QTimer::timeout,
-            this, &LocationProvider::fetchLocation);
+LocationProvider::LocationProvider(QObject *parent)
+    : QObject(parent), m_settings(QSettings::IniFormat, QSettings::UserScope,
+                                  "AvionicsClock", "Location")
+{
+    m_city = m_settings.value("city").toString();
+    m_latitude = m_settings.value("latitude").toDouble();
+    m_longitude = m_settings.value("longitude").toDouble();
+    if (!m_settings.contains("latitude") || !m_settings.contains("longitude")
+        || !validLocation(m_city, m_latitude, m_longitude))
+        useTenthOfRamadan();
+    else if (m_city == QString::fromUtf8("العاشر من رمضان"))
+        saveManualLocation(QStringLiteral("10th of Ramadan City"), m_latitude, m_longitude);
 }
 
-QString LocationProvider::getCity()
+bool LocationProvider::validLocation(const QString &city, double latitude, double longitude)
 {
-    return m_city;
+    return !city.trimmed().isEmpty() && std::isfinite(latitude) && std::isfinite(longitude)
+           && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 }
 
-double LocationProvider::getLatitude()
+void LocationProvider::setError(const QString &message)
 {
-    return m_latitude;
-}
-
-double LocationProvider::getLongitude()
-{
-    return m_longitude;
-}
-
-QString LocationProvider::getError()
-{
-    return m_error;
-}
-
-void LocationProvider::fetchLocation()
-{
-    QUrl url("http://ip-api.com/json/");
-    QNetworkRequest request(url);
-    m_manager.get(request);
-}
-
-void LocationProvider::onReplyFinished(QNetworkReply *reply)
-{
-    //1. Check for network errors
-    if (reply->error() != QNetworkReply::NoError) {
-
-        QString newError = reply->errorString();
-
-        if (m_error != newError) {
-            m_error = newError;
-            emit errorChanged();
-        }
-
-        //START retry if not already running
-        if (!m_retryTimer.isActive()) {
-            qDebug() << "Starting retry timer...";
-            m_retryTimer.start();
-        }
-
-        reply->deleteLater();
-        return; //STOP here
-    }
-
-
-    // success → stop retry
-    if (m_retryTimer.isActive()) {
-        qDebug() << "Stop retry timer...";
-        m_retryTimer.stop();
-    }
-
-    //2. Clear error if success
-    if (!m_error.isEmpty()) {
-        m_error.clear();
-        emit errorChanged();
-    }
-
-    //3. Normal flow
-    QByteArray data = reply->readAll();
-
-    QJsonDocument doc = QJsonDocument::fromJson(data);
-
-    if (!doc.isObject()) {
-        qDebug() << "Invalid JSON!";
+    if (m_error == message)
         return;
+    m_error = message;
+    emit errorChanged();
+}
+
+bool LocationProvider::saveManualLocation(const QString &city, double latitude, double longitude)
+{
+    if (!validLocation(city, latitude, longitude)) {
+        setError(tr("Enter a city, latitude (-90 to 90), and longitude (-180 to 180)."));
+        return false;
     }
-
-    QJsonObject obj = doc.object();
-
-    QString newCity = obj["city"].toString();
-    double  newLat  = obj["lat"].toDouble();
-    double  newLon  = obj["lon"].toDouble();
-
-    if (m_city != newCity) {
-        m_city = newCity;
-        emit cityChanged();
+    m_settings.setValue("city", city.trimmed());
+    m_settings.setValue("latitude", latitude);
+    m_settings.setValue("longitude", longitude);
+    m_settings.sync();
+    if (m_settings.status() != QSettings::NoError) {
+        setError(tr("Could not save the location settings."));
+        return false;
     }
+    m_city = city.trimmed();
+    m_latitude = latitude;
+    m_longitude = longitude;
+    setError({});
+    emit cityChanged();
+    emit locationChanged();
+    return true;
+}
 
-    bool locationUpdated = false;
-
-    if (!qFuzzyCompare(m_latitude + 1.0, newLat + 1.0)) {
-        m_latitude = newLat;
-        locationUpdated = true;
-    }
-
-    if (!qFuzzyCompare(m_longitude + 1.0, newLon + 1.0)) {
-        m_longitude = newLon;
-        locationUpdated = true;
-    }
-
-    if (locationUpdated) {
-        emit locationChanged();
-    }
-
-    reply->deleteLater();
+bool LocationProvider::useTenthOfRamadan()
+{
+    return saveManualLocation(QStringLiteral("10th of Ramadan City"), 30.306503, 31.741455);
 }
