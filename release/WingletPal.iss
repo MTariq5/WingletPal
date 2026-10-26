@@ -2,7 +2,7 @@
   #error PackageDir must point to the deployed application folder.
 #endif
 #ifndef AppVersion
-  #define AppVersion "0.1.0"
+  #define AppVersion "0.1.1"
 #endif
 
 [Setup]
@@ -23,6 +23,7 @@ OutputBaseFilename=WingletPal-{#AppVersion}-Windows-x64-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\Resources\app\wingletpal.ico
 UninstallDisplayIcon={app}\WingletPal.exe
 CloseApplications=yes
 RestartApplications=no

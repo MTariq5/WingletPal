@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- Original WingletPal artwork, 2026 Mohamed Tarek. SPDX-License-Identifier: MIT.
+       See ../../licenses/AvionicsClock-Artwork-MIT.txt. -->
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#243649"/>
+      <stop offset="1" stop-color="#101925"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#FFE19A"/>
+      <stop offset="1" stop-color="#D9A441"/>
+    </linearGradient>
+  </defs>
+  <rect x="9" y="9" width="238" height="238" rx="54" fill="url(#body)"/>
+  <rect x="14" y="14" width="228" height="228" rx="49" fill="none" stroke="#D9A441" stroke-width="6"/>
+  <path d="M108 57 L128 40 L148 57 L128 51 Z" fill="url(#gold)"/>
+  <path d="M60 101 L27 94 L36 112 L62 121 Z M60 125 L37 120 L44 136 L63 141 Z" fill="url(#gold)"/>
+  <path d="M196 101 L229 94 L220 112 L194 121 Z M196 125 L219 120 L212 136 L193 141 Z" fill="url(#gold)"/>
+  <rect x="52" y="76" width="152" height="98" rx="37" fill="#080F19" stroke="#40536A" stroke-width="3"/>
+  <rect x="68" y="90" width="49" height="68" rx="24.5" fill="#F5FAFF"/>
+  <rect x="139" y="90" width="49" height="68" rx="24.5" fill="#F5FAFF"/>
+  <ellipse cx="97" cy="124" rx="16" ry="22" fill="#369CCC"/>
+  <ellipse cx="159" cy="124" rx="16" ry="22" fill="#369CCC"/>
+  <ellipse cx="99" cy="126" rx="10" ry="15" fill="#102335"/>
+  <ellipse cx="157" cy="126" rx="10" ry="15" fill="#102335"/>
+  <circle cx="93" cy="115" r="5" fill="#FFFFFF"/>
+  <circle cx="151" cy="115" r="5" fill="#FFFFFF"/>
+  <path d="M109 188 Q128 205 147 188" fill="none" stroke="url(#gold)" stroke-width="7" stroke-linecap="round"/>
+</svg>

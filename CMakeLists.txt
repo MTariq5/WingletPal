@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(AvionicsClock VERSION 0.1 LANGUAGES CXX)
+project(AvionicsClock VERSION 0.1.1 LANGUAGES CXX)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -21,6 +21,12 @@ qt_add_executable(appAvionicsClock
     main.cpp
 )
 
+if(WIN32)
+    enable_language(RC)
+    configure_file(release/WingletPal.rc.in WingletPal.rc @ONLY)
+    target_sources(appAvionicsClock PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/WingletPal.rc")
+endif()
+
 # Debug builds use the developer's source-root configuration; distributed
 # builds read opensky.ini next to the executable instead.
 target_compile_definitions(appAvionicsClock PRIVATE
@@ -36,6 +42,7 @@ qt_add_qml_module(appAvionicsClock
     URI AvionicsClock
     VERSION 1.0
     QML_FILES main.qml
+    RESOURCES Resources/app/wingletpal.png
     RESOURCES Resources/ehsi/ehsi_dev_scale.svg
     RESOURCES Resources/ehsi/ehsi_hdg_scale.svg
     RESOURCES Resources/ehsi/hi_case.svg
@@ -43,6 +50,7 @@ qt_add_qml_module(appAvionicsClock
     RESOURCES Resources/ehsi/hi_loc2-dev.svg
     RESOURCES Resources/ehsi/ehsi_hdg_bug.svg
     QML_FILES utilities/CloseButton.qml utilities/CustomButtonIcon.qml
+    QML_FILES utilities/WindowDragHandle.qml
     RESOURCES Resources/settings-outline.svg
     RESOURCES Resources/up-arrow.svg
     RESOURCES Resources/Brightness-Slider/brightnessicon-orange.svg Resources/Brightness-Slider/brightnessicon.svg Resources/Brightness-Slider/crescent-moon.svg

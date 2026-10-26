@@ -7,9 +7,7 @@ import QtQuick
 // data comes from" convention) so it has no dependency on LocationProvider
 // or AirTrafficPage's own fix-gating logic beyond what's handed to it.
 //
-// Sits at y:0, under main.qml's transparent 40px window-drag Rectangle —
-// that's fine, this bar is text-only with no interactive elements, so it
-// never needs the mouse events that Rectangle intercepts for dragging.
+// Centered at the top, clear of the window's upper-right drag handle.
 Item {
     id: root
 

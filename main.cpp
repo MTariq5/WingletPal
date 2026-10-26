@@ -1,4 +1,5 @@
 #include <QGuiApplication>
+#include <QIcon>
 #include "FocusSession.h"
 #include "CitySearch.h"
 #include <QQmlApplicationEngine>
@@ -20,6 +21,7 @@
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
+    app.setWindowIcon(QIcon(QStringLiteral(":/AvionicsClock/Resources/app/wingletpal.png")));
 
     qmlRegisterType<TimeDateProvider>("TimeDateProvider", 1, 0, "TimeDateProvider");
     qmlRegisterType<LocationProvider>("LocationProvider", 1, 0, "LocationProvider");

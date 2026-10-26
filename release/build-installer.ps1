@@ -87,7 +87,7 @@ Get-ChildItem -LiteralPath (Join-Path $OpenCvSource '3rdparty') -Recurse -File |
 if (Test-Path -LiteralPath (Join-Path $payload 'opensky.ini')) { throw 'Credentials must not be packaged' }
 
 Invoke-Checked $InnoCompiler @("/DPackageDir=$payload", (Join-Path $PSScriptRoot 'WingletPal.iss'))
-$installer = Join-Path $PSScriptRoot 'WingletPal-0.1.0-Windows-x64-Setup.exe'
+$installer = Join-Path $PSScriptRoot 'WingletPal-0.1.1-Windows-x64-Setup.exe'
 $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
 Set-Content -LiteralPath ($installer + '.sha256') -Value "$hash  $([IO.Path]::GetFileName($installer))" -Encoding Ascii
 Write-Output "Installer: $installer"

@@ -475,8 +475,8 @@ Window {
                     }
 
                     Rectangle {
-                        anchors.top: parent.top
-                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
                         anchors.margins: 6 * uiScale
                         width: temperatureLabel.implicitWidth + 14 * uiScale
                         height: 24 * uiScale
@@ -791,34 +791,9 @@ Window {
             }
         }
 
-        //Drag Rec
-        Rectangle {
-            id: dragArea
-            width: parent.width
-            height: cameraPage.SwipeView.isCurrentItem || digitalPage.SwipeView.isCurrentItem ? 8 : 40
-            color: "transparent"
-
-            MouseArea {
-                anchors.fill: parent
-                property point clickPos
-
-                onPressed: (mouse) => {
-                    clickPos = Qt.point(mouse.x, mouse.y)
-                }
-
-                onPositionChanged: (mouse) => {
-                    root.x += mouse.x - clickPos.x
-                    root.y += mouse.y - clickPos.y
-                }
-            }
-        }
     }
 
-    // Startup gate overlays — declared after mainRec so they paint on top
-    // of it (every page, the settings drawer, and the drag handle all
-    // live inside mainRec). Each is a full-window MouseArea-backed opaque
-    // screen while visible, so nothing underneath is reachable until
-    // appState reaches "ready".
+    // Startup overlays block the pages while the window handle remains usable.
     SplashScreen {
         anchors.fill: parent
         visible: root.appState === "splash"
@@ -834,5 +809,12 @@ Window {
         visible: root.appState === "wifiSetup"
         wifiManager: wifiManager
         connectivityChecker: connectivityChecker
+    }
+
+    WindowDragHandle {
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.margins: 4
+        targetWindow: root
     }
 }
