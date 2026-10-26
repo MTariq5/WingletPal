@@ -101,3 +101,15 @@ CMakeLists.txt.user*
 # Generated map cache and packaged builds
 /AvionicsClock/osm-tile-cache/
 /dist/
+
+# Local documentation, standalone tests, and unused instrument artwork
+/AIR_TRAFFIC_DISPLAY_PLAN.md
+/CLAUDE.md
+/README.md
+/THIRD_PARTY_NOTICES.md
+/docs/
+/tests/
+/Resources/audio/README.md
+/vision/README.md
+/Resources/Airspeed/
+/Resources/Altimeter/
