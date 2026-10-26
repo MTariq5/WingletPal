@@ -92,6 +92,7 @@ CMakeLists.txt.user*
 /.qtcreator/
 /.claude/settings.local.json
 /.codex-remote-attachments/
+/.claude/rules/
 /.local-publication/
 .env
 .env.*
