@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QDebug>
+#include <QCoreApplication>
 
 // Per OpenSky's docs (docs/free/rest.rst): the auth server is a *separate*
 // host from the API itself (auth.opensky-network.org vs. opensky-network.org
@@ -23,19 +24,15 @@ OpenSkyTokenManager::OpenSkyTokenManager(QObject *parent) : QObject(parent)
     loadCredentialsFromConfig();
 }
 
-// Reads [opensky]/client_id and [opensky]/client_secret from
-// <repo-root>/opensky.ini. The path is fixed via the AVIONICSCLOCK_SOURCE_DIR
-// compile definition (see CMakeLists.txt) rather than resolved next to the
-// built .exe — so the same opensky.ini works regardless of which of the
-// project's build directories/kits you're using, with nothing to copy
-// per-build. Trims whitespace from both values defensively (a stray space
-// after "=" in the ini file is a common copy/paste mistake). Sets
-// m_hasCredentials to false (and logs a clear, actionable qWarning) if
-// either value ends up empty, so every other method can rely on
-// m_hasCredentials rather than re-checking the strings themselves.
+// Distributed builds use a user-supplied file next to the executable.
+// Debug builds retain the source-root configuration for local development.
 void OpenSkyTokenManager::loadCredentialsFromConfig()
 {
+#ifdef AVIONICSCLOCK_SOURCE_DIR
     const QString path = QStringLiteral(AVIONICSCLOCK_SOURCE_DIR) + QStringLiteral("/opensky.ini");
+#else
+    const QString path = QCoreApplication::applicationDirPath() + QStringLiteral("/opensky.ini");
+#endif
     QSettings settings(path, QSettings::IniFormat);
 
     m_clientId = settings.value(QStringLiteral("opensky/client_id")).toString().trimmed();

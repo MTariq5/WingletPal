@@ -1,0 +1,11 @@
+WingletPal 0.1.0 - Windows preview
+
+Requires 64-bit Windows 10 or later. Qt and compiler runtime libraries are included; you do not need to install Qt or development tools.
+
+Internet access is required to pass the startup connectivity check and load weather and maps. Start the camera explicitly from the camera page if you want face tracking. Camera access is optional.
+
+Live aircraft data requires your own OpenSky API credentials. In the installed application folder, copy opensky.ini.example to opensky.ini, enter your client_id and client_secret, and restart WingletPal. No developer credentials are included.
+
+The app installs for your Windows user without administrator privileges. You can uninstall it through Windows Settings. Your own opensky.ini and saved city settings are not removed automatically.
+
+This is an unsigned preview build. The existing audio clips are retained; their redistribution permissions remain unresolved. This preview is not a clearance of those assets for public distribution.

@@ -1,4 +1,6 @@
-# Copy to opensky.ini in the source root and enter your own OpenSky credentials.
+# Installed/Release app: copy beside the executable as opensky.ini.
+# Debug build: copy to opensky.ini in the source root.
+# Enter your own OpenSky credentials below.
 # opensky.ini is ignored by Git. Never commit credentials or access tokens.
 [opensky]
 client_id=

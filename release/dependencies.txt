@@ -1,0 +1,16 @@
+WingletPal Windows runtime dependencies
+
+Qt 6.8.3 (dynamically linked): https://download.qt.io/archive/qt/6.8/6.8.3/single/
+Qt is used under the applicable LGPL terms. License texts and third-party attribution files are included in licenses/Qt. You may replace the Qt DLLs with compatible builds. Reverse engineering to debug modifications to these LGPL libraries is permitted under their licenses.
+
+OpenCV 4.12.0 (statically linked): https://github.com/opencv/opencv/tree/4.12.0
+License and bundled third-party notices are included in licenses/OpenCV*.
+
+FFmpeg 7.1 runtime supplied with Qt: https://ffmpeg.org/releases/ffmpeg-7.1.tar.xz
+Attribution and license texts are included under licenses/Qt/qtmultimedia.
+
+MinGW GCC 13.1 runtime: https://gcc.gnu.org/releases.html
+Runtime license texts and the GCC Runtime Library Exception are included under licenses/MinGW-*.
+
+Artwork and detector-model license notices are included in licenses/.
+These dependency licenses do not grant a license to the application code or to audio clips of unresolved provenance.

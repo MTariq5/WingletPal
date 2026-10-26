@@ -21,11 +21,10 @@ qt_add_executable(appAvionicsClock
     main.cpp
 )
 
-# Lets OpenSkyTokenManager find opensky.ini at a fixed location (the repo
-# root) regardless of which build directory/kit produced the running .exe —
-# see opensky.ini.example and OpenSkyTokenManager::loadCredentialsFromConfig.
+# Debug builds use the developer's source-root configuration; distributed
+# builds read opensky.ini next to the executable instead.
 target_compile_definitions(appAvionicsClock PRIVATE
-    AVIONICSCLOCK_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+    "$<$<CONFIG:Debug>:AVIONICSCLOCK_SOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\">"
 )
 
 # Bundles greeting and reminder clips; see Resources/audio/README.md.

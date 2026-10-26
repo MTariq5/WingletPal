@@ -75,6 +75,7 @@ CMakeLists.txt.user*
 # --------
 *.dll
 *.exe
+!/release/WingletPal-*-Windows-x64-Setup.exe
 
 # Directories with generated files
 .moc/
